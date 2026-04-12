@@ -10,7 +10,7 @@ export default function AdminPanel() {
   const [contents, setContents] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const SECRET_CODE = 'admin123'; // Simple secret code for prototype
+  const SECRET_CODE = import.meta.env.VITE_ADMIN_PASSWORD || 'admin123';
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();

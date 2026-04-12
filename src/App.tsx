@@ -222,7 +222,10 @@ function MainApp() {
           <div className="bg-indigo-600 p-2 rounded-lg">
             <Share2 className="text-white w-5 h-5" />
           </div>
-          <h1 className="text-xl font-bold tracking-tight">FB Format Pro</h1>
+          <div>
+            <h1 className="text-xl font-bold tracking-tight">Social Font</h1>
+            <p className="text-[10px] uppercase tracking-wider opacity-60 font-semibold">Perfect fonts for FB, Insta & Twitter</p>
+          </div>
         </div>
         
         <div className="flex items-center gap-3">
@@ -423,23 +426,23 @@ function MainApp() {
 
       {/* SEO Content Section */}
       <section className={`mt-16 max-w-4xl mx-auto p-8 rounded-2xl ${isDarkMode ? 'bg-[#1a1b2e] text-gray-300' : 'bg-white text-gray-600'} shadow-sm`}>
-        <h2 className={`text-2xl font-bold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>The Ultimate Facebook Font Formatter & Text Styler</h2>
+        <h2 className={`text-2xl font-bold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>The Ultimate Social Media Font Formatter & Text Styler</h2>
         <p className="mb-4">
-          Welcome to <strong>FB Format Pro</strong>, the #1 tool to format your text for Facebook, Instagram, Twitter, and other social media platforms. Whether you want to make your text <strong>bold</strong>, <em>italic</em>, or use fancy fonts like ⦗bubble⦘ and ⟬square⟭, we have you covered.
+          Welcome to <strong>Social Font</strong>, the #1 tool to format your text for Facebook, Instagram, Twitter, TikTok, WhatsApp, and other social media platforms. Whether you want to make your text <strong>bold</strong>, <em>italic</em>, or use fancy fonts like ⦗bubble⦘ and ⟬square⟭, we have you covered.
         </p>
-        <h3 className={`text-xl font-semibold mb-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Why Use Our Text Formatter?</h3>
+        <h3 className={`text-xl font-semibold mb-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Why Use Social Font?</h3>
         <ul className="list-disc pl-6 mb-4 space-y-2">
           <li><strong>100% Free & Easy to Use:</strong> Just type, select, and click to format.</li>
           <li><strong>Universal Language Support:</strong> Unlike other tools, we fully support complex scripts like Bengali, Arabic, and Hindi without showing "boxes" or glitches.</li>
           <li><strong>Advanced Tools:</strong> Use our intelligent tools like Sarcasm Case, Mirror Text, Tiny Text, and Glitch effects to make your posts stand out.</li>
           <li><strong>Save Your Work:</strong> Enter your email to automatically save your formatted texts and access them anytime.</li>
         </ul>
-        <h3 className={`text-xl font-semibold mb-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>How to Bold Text on Facebook?</h3>
+        <h3 className={`text-xl font-semibold mb-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>How to Bold Text on Social Media?</h3>
         <p className="mb-4">
-          Facebook doesn't have a built-in bold button for regular posts. Our tool uses special Unicode characters to simulate bold text. Simply type your message, select the text you want to emphasize, and click the <strong>B</strong> button. Then copy and paste it into Facebook!
+          Most social platforms don't have a built-in bold button for regular posts. Our tool uses special Unicode characters to simulate bold text. Simply type your message, select the text you want to emphasize, and click the <strong>B</strong> button. Then copy and paste it into any app!
         </p>
         <p className="text-sm opacity-80">
-          <em>Keywords: Facebook font formatter, FB text styler, bold text on facebook, italic text facebook, instagram font generator, twitter font changer, fancy text generator, unicode text converter, social media text formatting.</em>
+          <em>Keywords: social font, facebook font formatter, instagram font generator, twitter font changer, bold text generator, fancy text, unicode text converter, social media text formatting, text styler, fb text styler, bold text on facebook, italic text facebook.</em>
         </p>
       </section>
 
@@ -450,7 +453,7 @@ function MainApp() {
           <Languages className="w-5 h-5 opacity-30" />
           <Layout className="w-5 h-5 opacity-30" />
         </div>
-        <p className="text-sm font-medium">FB Format Pro • Professional Unicode Text Styler</p>
+        <p className="text-sm font-medium">Social Font • Perfect fonts for FB, Insta & Twitter</p>
         <p className="text-xs mt-2 opacity-60">Supports all languages including RTL and CJK</p>
       </footer>
 
