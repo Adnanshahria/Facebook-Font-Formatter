@@ -1,0 +1,65 @@
+{
+  "entities": {
+    "Visitor": {
+      "title": "Visitor",
+      "description": "Tracks unique visitors to the site.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique visitor ID generated on client."
+        },
+        "visitedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Time of visit."
+        }
+      },
+      "required": ["id", "visitedAt"]
+    },
+    "UserContent": {
+      "title": "UserContent",
+      "description": "Saved formatted content for a user.",
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "User's email address."
+        },
+        "originalText": {
+          "type": "string",
+          "description": "The original text."
+        },
+        "formattedText": {
+          "type": "string",
+          "description": "The formatted text."
+        },
+        "serialNumber": {
+          "type": "number",
+          "description": "Sequential serial number for the user's content."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Time the content was saved."
+        }
+      },
+      "required": ["email", "originalText", "formattedText", "serialNumber", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/visitors/{visitorId}": {
+      "schema": {
+        "$ref": "#/entities/Visitor"
+      },
+      "description": "Collection of unique visitors."
+    },
+    "/user_contents/{contentId}": {
+      "schema": {
+        "$ref": "#/entities/UserContent"
+      },
+      "description": "Collection of user saved contents."
+    }
+  }
+}

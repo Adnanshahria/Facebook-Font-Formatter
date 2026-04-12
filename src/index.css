@@ -8,4 +8,10 @@
 .passage-field {
   font-feature-settings: "liga" 1, "clig" 1, "kern" 1;
   line-height: 1.8;
+  -webkit-touch-callout: none; /* Disable default callout on iOS */
+}
+
+/* Hide default selection toolbar on iOS/Safari */
+.passage-field::selection {
+  background: rgba(99, 102, 241, 0.2);
 }
