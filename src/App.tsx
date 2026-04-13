@@ -224,7 +224,7 @@ function MainApp() {
             <Sparkles className="text-white w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-xl font-bold tracking-tight text-white">Social Font</h1>
+            <h1 className="text-xl font-bold tracking-tight text-white">SocialFont.space</h1>
             <div className="flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
               <p className="text-[10px] uppercase tracking-[0.2em] text-slate-400 font-bold">Premium Formatter</p>
@@ -447,7 +447,7 @@ function MainApp() {
            <Sparkles className="w-5 h-5" />
            <Hash className="w-5 h-5" />
         </div>
-        <p className="text-sm font-bold text-slate-500 tracking-wide">Social Font Engine • Engineered for Quality</p>
+        <p className="text-sm font-bold text-slate-500 tracking-wide">SocialFont.space Engine • Engineered for Quality</p>
         <p className="text-[10px] uppercase font-black tracking-[0.3em] mt-3 text-slate-600">Pure Unicode • No External Fonts Required</p>
       </footer>
 
