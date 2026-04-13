@@ -28,6 +28,48 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import * as unicode from './lib/unicodeUtils';
 
+const filteredEmojis = [
+  '😀', '😃', '😄', '😁', '😆', '😅', '😂', '😊', '😍', '🥰', '😘', '😋', '😎', '🤩', '🥳', '😏', '🤔', '🤭', '🤫', '🤥', '😶', '😐', '😑', '😬', '🙄', '😯', '😦', '😧', '😮', '😲', '🥱', '😴', '🤤', '😪', '😵', '🤐', 
+  '👋', '👌', '🤟', '🤘', '🤙', '👍', '👎', '✊', '👊', '🤛', '🤜', '👏', '🙌', '👐', '🤲', '🤝', '🙏', '✍️', '💪',
+  '❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❣️', '💕', '✨', '🌟', '⭐', '💫', '🔥', '💥', '⚡', '🌈', '☀️', '🌊'
+];
+
+const toolbarOptions = [
+  { icon: <Bold className="w-5 h-5" />, label: 'Bold', displayLabel: 'Bold', func: unicode.toFacebookBold },
+  { icon: <Italic className="w-5 h-5" />, label: 'Italic', displayLabel: 'Italic', func: unicode.toFacebookItalic },
+  { icon: <Underline className="w-5 h-5" />, label: 'Underline', displayLabel: 'Line', func: unicode.toFacebookUnderline },
+  { icon: <Strikethrough className="w-5 h-5" />, label: 'Strikethrough', displayLabel: 'Strike', func: unicode.toFacebookStrikethrough },
+  { icon: <MonospaceIcon className="w-5 h-5" />, label: 'Monospace', displayLabel: 'Mono', func: unicode.toFacebookMonospace },
+  { icon: <PenTool className="w-5 h-5" />, label: 'Script', displayLabel: 'Script', func: unicode.toFacebookScript },
+  { icon: <Hash className="w-5 h-5" />, label: 'Double Struck', displayLabel: 'Double', func: unicode.toFacebookDoubleStruck },
+  { icon: <span className="font-display font-black text-lg">𝕱</span>, label: 'Fraktur', displayLabel: 'Black', func: unicode.toFacebookFraktur },
+  { icon: <Circle className="w-5 h-5" />, label: 'Bubble', displayLabel: 'Bubble', func: unicode.toFacebookBubble },
+  { icon: <div className="w-5 h-5 bg-current rounded-full" />, label: 'Bubble Filled', displayLabel: 'Bub Fill', func: (t: string) => unicode.toFacebookBubble(t, true) },
+  { icon: <Square className="w-5 h-5" />, label: 'Square', displayLabel: 'Square', func: unicode.toFacebookSquare },
+  { icon: <div className="w-5 h-5 bg-current rounded-sm" />, label: 'Square Filled', displayLabel: 'Sq Fill', func: (t: string) => unicode.toFacebookSquare(t, true) },
+  { icon: <span className="text-sm font-black">aA</span>, label: 'Sarcasm', displayLabel: 'Sarcasm', func: unicode.toSarcasmCase },
+  { icon: <div className="rotate-180 scale-x-[-1]"><Search className="w-5 h-5" /></div>, label: 'Mirror', displayLabel: 'Mirror', func: unicode.toMirrorText },
+  { icon: <span className="text-[10px] font-black underline underline-offset-4">abc</span>, label: 'Caps', displayLabel: 'Caps', func: unicode.toSmallCaps },
+  { icon: <Zap className="w-5 h-5" />, label: 'Glitch', displayLabel: 'Glitch', func: unicode.toZalgoText },
+  { icon: <Eraser className="w-5 h-5" />, label: 'Normalize', displayLabel: 'Clear', func: unicode.normalizeText, isSpecial: true },
+];
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.3
+    }
+  }
+};
+
+const itemVariants = {
+  hidden: { y: 20, opacity: 0 },
+  visible: { y: 0, opacity: 1 }
+};
+
 function MainApp() {
   const [inputText, setInputText] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -169,52 +211,11 @@ function MainApp() {
     document.body.removeChild(element);
   };
 
-  const filteredEmojis = [
-    '😀', '😃', '😄', '😁', '😆', '😅', '😂', '😊', '😍', '🥰', '😘', '😋', '😎', '🤩', '🥳', '😏', '🤔', '🤭', '🤫', '🤥', '😶', '😐', '😑', '😬', '🙄', '😯', '😦', '😧', '😮', '😲', '🥱', '😴', '🤤', '😪', '😵', '🤐', 
-    '👋', '👌', '🤟', '🤘', '🤙', '👍', '👎', '✊', '👊', '🤛', '🤜', '👏', '🙌', '👐', '🤲', '🤝', '🙏', '✍️', '💪',
-    '❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❣️', '💕', '✨', '🌟', '⭐', '💫', '🔥', '💥', '⚡', '🌈', '☀️', '🌊'
-  ];
-
-  const toolbarOptions = [
-    { icon: <Bold className="w-5 h-5" />, label: 'Bold', func: unicode.toFacebookBold },
-    { icon: <Italic className="w-5 h-5" />, label: 'Italic', func: unicode.toFacebookItalic },
-    { icon: <Underline className="w-5 h-5" />, label: 'Underline', func: unicode.toFacebookUnderline },
-    { icon: <Strikethrough className="w-5 h-5" />, label: 'Strikethrough', func: unicode.toFacebookStrikethrough },
-    { icon: <MonospaceIcon className="w-5 h-5" />, label: 'Monospace', func: unicode.toFacebookMonospace },
-    { icon: <PenTool className="w-5 h-5" />, label: 'Script', func: unicode.toFacebookScript },
-    { icon: <Hash className="w-5 h-5" />, label: 'Double Struck', func: unicode.toFacebookDoubleStruck },
-    { icon: <span className="font-display font-black text-lg">𝕱</span>, label: 'Fraktur', func: unicode.toFacebookFraktur },
-    { icon: <Circle className="w-5 h-5" />, label: 'Bubble', func: unicode.toFacebookBubble },
-    { icon: <div className="w-5 h-5 bg-current rounded-full" />, label: 'Bubble Filled', func: (t: string) => unicode.toFacebookBubble(t, true) },
-    { icon: <Square className="w-5 h-5" />, label: 'Square', func: unicode.toFacebookSquare },
-    { icon: <div className="w-5 h-5 bg-current rounded-sm" />, label: 'Square Filled', func: (t: string) => unicode.toFacebookSquare(t, true) },
-    { icon: <span className="text-sm font-black">aA</span>, label: 'Sarcasm', func: unicode.toSarcasmCase },
-    { icon: <div className="rotate-180 scale-x-[-1]"><Search className="w-5 h-5" /></div>, label: 'Mirror', func: unicode.toMirrorText },
-    { icon: <span className="text-[10px] font-black underline underline-offset-4">abc</span>, label: 'Caps', func: unicode.toSmallCaps },
-    { icon: <Zap className="w-5 h-5" />, label: 'Glitch', func: unicode.toZalgoText },
-    { icon: <Eraser className="w-5 h-5" />, label: 'Normalize', func: unicode.normalizeText, isSpecial: true },
-  ];
-
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-        delayChildren: 0.3
-      }
-    }
-  };
-
-  const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: { y: 0, opacity: 1 }
-  };
 
   return (
     <div className="min-h-screen">
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-white/5 bg-midnight/50 backdrop-blur-xl px-6 py-4 flex items-center justify-between shadow-2xl">
+      <header className="sticky top-0 z-50 border-b border-white/5 bg-midnight/50 backdrop-blur-md px-6 py-4 flex items-center justify-between shadow-2xl">
         <motion.div 
           initial={{ x: -20, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
@@ -254,189 +255,291 @@ function MainApp() {
         </motion.div>
       </header>
 
-      <main className="max-w-5xl mx-auto p-6 pt-12">
+      <main className="max-w-screen-2xl mx-auto p-4 md:p-6 lg:p-10 pt-12">
         <motion.div 
           variants={containerVariants}
           initial="hidden"
           animate="visible"
-          className="flex flex-col gap-10"
+          className="flex flex-col lg:grid lg:grid-cols-[260px_1fr] xl:grid-cols-[300px_1fr_300px] gap-8 lg:items-start"
         >
-          {/* Editor Section */}
-          <motion.div variants={itemVariants} className="w-full relative">
-            <div className="glass-card rounded-[2rem] overflow-hidden relative">
-              <div className="px-8 py-5 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
-                <div className="flex items-center gap-2 text-xs font-bold tracking-widest text-slate-500 uppercase">
-                  <Layout className="w-4 h-4" />
-                  <span>Editor Workspace</span>
-                </div>
-                <div className="flex items-center gap-6">
-                  <div className="flex items-center gap-2">
-                    <Languages className="w-4 h-4 text-indigo-400" />
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{detectedScript}</span>
-                  </div>
-                  <div className="h-4 w-px bg-white/10" />
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{inputText.length} Characters</span>
-                </div>
-              </div>
-
-              {/* Formatting Toolbar — always visible, glows when text is selected */}
-              <div className={`border-b transition-all duration-300 ${hasSelection ? 'border-indigo-500/30 bg-indigo-500/[0.04] shadow-[inset_0_-1px_12px_rgba(99,102,241,0.15)]' : 'border-white/5 bg-white/[0.02]'}`}>
-                <div className="flex flex-wrap items-center gap-1 px-6 py-3">
-                  {toolbarOptions.map((opt, idx) => (
-                    <button
-                      key={idx}
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => applyStyleToSelection(opt.func)}
-                      className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all duration-200 ${
-                        opt.isSpecial
-                          ? 'text-orange-400 hover:bg-orange-400/10'
-                          : 'text-slate-300 hover:bg-indigo-500 hover:text-white'
-                      }`}
-                      title={opt.label}
-                    >
-                      <div className="text-base">{opt.icon}</div>
-                    </button>
+          {/* Left Sidebar: Description Workspace */}
+          <motion.aside variants={itemVariants} className="hidden lg:block sticky top-32 h-fit">
+            <div className="glass-card rounded-[1.5rem] p-5 border-0">
+              <div className="bg-indigo-500/10 p-3 rounded-xl w-fit mb-5 text-indigo-400">
+                <Layout className="w-6 h-6" />
+               </div>
+              <h2 className="text-xl font-black text-white mb-3 leading-tight">
+                Enhance Your <span className="text-indigo-400">Social Presence.</span>
+              </h2>
+              <div className="space-y-4">
+                <p className="text-slate-400 text-xs font-medium leading-relaxed">
+                  Elevate your profiles with cinematic formatting for:
+                </p>
+                <ul className="space-y-2.5">
+                  {[
+                    { name: 'Facebook', icon: 'FB' },
+                    { name: 'Instagram', icon: 'INSTA' },
+                    { name: 'Twitter / X', icon: 'X' },
+                    { name: 'Threads', icon: 'TH' }
+                  ].map(platform => (
+                    <li key={platform.name} className="flex items-center gap-2.5 group translate-x-0 hover:translate-x-1.5 transition-transform">
+                      <span className="text-[8px] font-black w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center text-indigo-400 border border-white/5 group-hover:bg-indigo-500 group-hover:text-white transition-colors uppercase">
+                        {platform.icon}
+                      </span>
+                      <span className="text-xs font-bold text-slate-300">{platform.name}</span>
+                    </li>
                   ))}
-
-                  <div className="w-px h-6 bg-white/10 mx-1" />
-
-                  <div className="relative">
-                    <button
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                      className="w-10 h-10 flex items-center justify-center rounded-xl transition-all text-yellow-500 hover:bg-yellow-500/10"
-                      title="Emoji"
-                    >
-                      <Smile className="w-5 h-5" />
-                    </button>
-
-                    <AnimatePresence>
-                      {showEmojiPicker && (
-                        <motion.div
-                          initial={{ opacity: 0, y: -10, scale: 0.9 }}
-                          animate={{ opacity: 1, y: 0, scale: 1 }}
-                          exit={{ opacity: 0, y: -10, scale: 0.9 }}
-                          className="absolute top-full mt-3 right-0 w-72 h-80 rounded-3xl glass-card z-50 flex flex-col overflow-hidden"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <div className="p-3 border-b border-white/5 flex items-center gap-3 bg-white/5">
-                            <Search className="w-4 h-4 text-slate-500" />
-                            <input
-                              type="text"
-                              placeholder="Search symbols..."
-                              className="w-full text-sm focus:outline-none bg-transparent premium-input"
-                              value={emojiSearch}
-                              onChange={(e) => setEmojiSearch(e.target.value)}
-                            />
-                          </div>
-                          <div className="flex-1 overflow-y-auto p-3 grid grid-cols-6 gap-1">
-                            {filteredEmojis.filter(e => emojiSearch === '' || e.includes(emojiSearch)).map(emoji => (
-                              <button
-                                key={emoji}
-                                onMouseDown={(e) => e.preventDefault()}
-                                onClick={() => {
-                                  const textarea = textareaRef.current;
-                                  if (textarea) {
-                                    const start = textarea.selectionStart;
-                                    const end = textarea.selectionEnd;
-                                    const newText = inputText.substring(0, start) + emoji + inputText.substring(end);
-                                    setInputText(newText);
-                                    setTimeout(() => {
-                                      textarea.focus();
-                                      textarea.setSelectionRange(start + emoji.length, start + emoji.length);
-                                      handleSelection();
-                                    }, 0);
-                                  }
-                                  setShowEmojiPicker(false);
-                                }}
-                                className="text-xl p-2 hover:bg-indigo-500/20 rounded-lg transition-colors"
-                              >
-                                {emoji}
-                              </button>
-                            ))}
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
+                </ul>
+                <div className="pt-5 border-t border-white/5 opacity-40">
+                  <p className="text-[8px] font-black uppercase tracking-[0.2em] text-slate-500">
+                    Engineered for Social Engines
+                  </p>
                 </div>
               </div>
-
-              <textarea
-                ref={textareaRef}
-                value={inputText}
-                onChange={(e) => {
-                  setInputText(e.target.value);
-                  handleSelection();
-                }}
-                onMouseUp={() => handleSelection()}
-                onKeyUp={handleSelection}
-                placeholder="Compose your message here..."
-                dir="auto"
-                spellCheck={false}
-                className="w-full h-96 p-10 resize-none focus:outline-none text-2xl leading-relaxed premium-input passage-field"
-              />
             </div>
-          </motion.div>
 
-          {/* AdSense Placeholder */}
-          <motion.div variants={itemVariants} className="w-full min-h-[100px] border border-dashed border-white/10 rounded-2xl flex items-center justify-center text-slate-600 text-xs uppercase tracking-widest font-bold">
-             Advertisement Space
-          </motion.div>
-
-          {/* Action Area */}
-          <motion.div variants={itemVariants} className="flex flex-col items-center gap-6">
-            <p className="text-slate-400 text-sm font-medium flex items-center gap-2">
-              <Share2 className="w-4 h-4 text-indigo-400" />
-              Select text to trigger the premium formatting engine
-            </p>
-            
-            <div className="flex flex-wrap justify-center gap-4">
-               <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => {
-                  setInputText('');
-                  setHasSelection(false);
-                }}
-                className="btn-outline flex items-center gap-3 px-10 border-red-500/20 text-red-400 hover:bg-red-500/5 hover:border-red-500/50"
-              >
-                <Trash2 className="w-5 h-5" />
-                <span>Reset Space</span>
-              </motion.button>
+            {/* Sub-Sidebar Ad */}
+            <div className="glass-card rounded-[1.5rem] p-5 mt-6 border-dashed border-white/10 flex flex-col items-center justify-center min-h-[250px] relative group">
+               <div className="absolute top-4 px-3 py-1 rounded-full bg-slate-900/50 border border-white/5 flex items-center gap-1.5">
+                  <div className="w-1 h-1 rounded-full bg-slate-600" />
+                  <span className="text-[6px] uppercase font-black tracking-widest text-slate-500">Sponsored</span>
+               </div>
+               <div className="opacity-10 group-hover:opacity-20 transition-opacity">
+                  <Layout className="w-8 h-8 text-slate-500" />
+               </div>
+               <p className="mt-4 text-[8px] font-bold text-slate-600 uppercase tracking-[0.2em] text-center">
+                  Sidebar Ad Slot
+               </p>
             </div>
-          </motion.div>
+          </motion.aside>
 
-          {/* Featured Sections (SEO & UX) */}
-          <motion.div variants={itemVariants} className="grid md:grid-cols-3 gap-6 mt-8">
-            <div className="glass-card p-8 rounded-3xl hover:bg-white/[0.07] transition-all group">
-              <div className="bg-indigo-500/10 p-3 rounded-2xl w-fit mb-6 text-indigo-400 group-hover:bg-indigo-500 group-hover:text-white transition-all">
-                <Zap className="w-6 h-6" />
+          {/* Main Content Area */}
+          <div className="flex flex-col gap-10 lg:mt-0">
+             {/* Trust & Onboarding Hero (Relocated to top) */}
+             <div className="space-y-6">
+                <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {[
+                    { icon: <Zap className="w-4 h-4" />, title: "Instant Format", desc: "20+ Cinematic Unicode styles." },
+                    { icon: <Languages className="w-4 h-4" />, title: "Global Support", desc: "Bengali, Arabic & Cyrillic fallback." },
+                    { icon: <Check className="w-4 h-4" />, title: "Copy & Deploy", desc: "Works on FB, IG, X & Threads." }
+                  ].map((feature, i) => (
+                    <div key={i} className="glass-card p-4 rounded-2xl flex items-center gap-4 bg-white/[0.01] hover:bg-white/[0.04] transition-all">
+                      <div className="bg-indigo-500/10 p-2.5 rounded-xl text-indigo-400">
+                        {feature.icon}
+                      </div>
+                      <div>
+                        <h3 className="text-[11px] font-black uppercase tracking-wider text-white">{feature.title}</h3>
+                        <p className="text-slate-500 text-[10px] font-medium leading-tight mt-0.5">{feature.desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </motion.div>
+
+                <motion.section variants={itemVariants} className="bg-white/[0.02] border border-white/5 rounded-3xl p-6 md:px-10">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                    <div className="flex items-center gap-4">
+                      <div className="bg-indigo-500 w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-black shadow-[0_0_20px_rgba(99,102,241,0.3)]">01</div>
+                      <h2 className="text-sm font-black text-white uppercase tracking-widest">Master SocialFont</h2>
+                    </div>
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 md:gap-10">
+                      {[
+                        { step: "01", title: "Type", desc: "Write message" },
+                        { step: "02", title: "Select", desc: "Highlight text" },
+                        { step: "03", title: "Format", desc: "Pick a style" },
+                        { step: "04", title: "Paste", desc: "Copy and go" }
+                      ].map((s, i) => (
+                        <div key={i} className="flex flex-col gap-1">
+                          <h4 className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">{s.title}</h4>
+                          <p className="text-slate-500 text-[9px] font-bold leading-tight uppercase opacity-60">{s.desc}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </motion.section>
+             </div>
+
+            {/* Editor Section */}
+            <motion.div variants={itemVariants} className="w-full relative">
+              <div className="glass-card rounded-[2rem] overflow-hidden relative">
+                <div className="px-8 py-5 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
+                  <div className="flex items-center gap-2 text-xs font-bold tracking-widest text-slate-500 uppercase">
+                    <PenTool className="w-4 h-4" />
+                    <span>Editor Workspace</span>
+                  </div>
+                  <div className="flex items-center gap-6">
+                    <div className="flex items-center gap-2">
+                      <Languages className="w-4 h-4 text-indigo-400" />
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{detectedScript}</span>
+                    </div>
+                    <div className="h-4 w-px bg-white/10" />
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{inputText.length} Characters</span>
+                  </div>
+                </div>
+
+                {/* Formatting Toolbar — always visible, glows when text is selected */}
+                <div className={`border-b transition-all duration-300 ${hasSelection ? 'border-indigo-500/30 bg-indigo-500/[0.04] shadow-[inset_0_-1px_12px_rgba(99,102,241,0.15)]' : 'border-white/5 bg-white/[0.02]'}`}>
+                  <div className="flex flex-wrap items-center gap-1.5 px-6 py-4">
+                    {toolbarOptions.map((opt, idx) => (
+                      <button
+                        key={idx}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => applyStyleToSelection(opt.func)}
+                        className={`group flex flex-col items-center gap-1.5 min-w-[3rem] py-2 rounded-xl transition-all duration-200 ${
+                          opt.isSpecial
+                            ? 'text-orange-400 hover:bg-orange-400/10'
+                            : 'text-slate-300 hover:bg-indigo-500/10 hover:text-white'
+                        }`}
+                        title={opt.label}
+                      >
+                        <div className="text-lg transition-transform group-hover:scale-110 duration-200">{opt.icon}</div>
+                        <span className={`text-[8px] uppercase font-black tracking-widest transition-colors duration-200 ${opt.isSpecial ? 'text-orange-400/60 group-hover:text-orange-400' : 'text-slate-500 group-hover:text-white'}`}>
+                          {opt.displayLabel}
+                        </span>
+                      </button>
+                    ))}
+
+                    <div className="w-px h-8 bg-white/10 mx-2" />
+
+                    <div className="relative">
+                      <button
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                        className="group flex flex-col items-center gap-1.5 min-w-[3rem] py-2 rounded-xl transition-all text-yellow-500 hover:bg-yellow-500/10"
+                        title="Emoji"
+                      >
+                        <div className="transition-transform group-hover:scale-110 duration-200">
+                          <Smile className="w-5 h-5" />
+                        </div>
+                        <span className="text-[8px] uppercase font-black tracking-widest text-yellow-500/60 group-hover:text-yellow-500">
+                          Emoji
+                        </span>
+                      </button>
+
+                      <AnimatePresence>
+                        {showEmojiPicker && (
+                          <motion.div
+                            initial={{ opacity: 0, y: -10, scale: 0.9 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: -10, scale: 0.9 }}
+                            className="absolute top-full mt-3 right-0 w-72 h-80 rounded-3xl glass-card z-50 flex flex-col overflow-hidden"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <div className="p-3 border-b border-white/5 flex items-center gap-3 bg-white/5">
+                              <Search className="w-4 h-4 text-slate-500" />
+                              <input
+                                type="text"
+                                placeholder="Search symbols..."
+                                className="w-full text-sm focus:outline-none bg-transparent premium-input"
+                                value={emojiSearch}
+                                onChange={(e) => setEmojiSearch(e.target.value)}
+                              />
+                            </div>
+                            <div className="flex-1 overflow-y-auto p-3 grid grid-cols-6 gap-1">
+                              {filteredEmojis.filter(e => emojiSearch === '' || e.includes(emojiSearch)).map(emoji => (
+                                <button
+                                  key={emoji}
+                                  onMouseDown={(e) => e.preventDefault()}
+                                  onClick={() => {
+                                    const textarea = textareaRef.current;
+                                    if (textarea) {
+                                      const start = textarea.selectionStart;
+                                      const end = textarea.selectionEnd;
+                                      const newText = inputText.substring(0, start) + emoji + inputText.substring(end);
+                                      setInputText(newText);
+                                      setTimeout(() => {
+                                        textarea.focus();
+                                        textarea.setSelectionRange(start + emoji.length, start + emoji.length);
+                                        handleSelection();
+                                      }, 0);
+                                    }
+                                    setShowEmojiPicker(false);
+                                  }}
+                                  className="text-xl p-2 hover:bg-indigo-500/20 rounded-lg transition-colors"
+                                >
+                                  {emoji}
+                                </button>
+                              ))}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  </div>
+                </div>
+
+                <textarea
+                  ref={textareaRef}
+                  value={inputText}
+                  onChange={(e) => {
+                    setInputText(e.target.value);
+                    handleSelection();
+                  }}
+                  onMouseUp={() => handleSelection()}
+                  onKeyUp={handleSelection}
+                  placeholder="Compose your message here..."
+                  dir="auto"
+                  spellCheck={false}
+                  className="w-full h-80 md:h-[400px] p-10 resize-none focus:outline-none text-2xl leading-relaxed premium-input passage-field"
+                />
               </div>
-              <h3 className="text-lg font-bold mb-3">Instant Format</h3>
-              <p className="text-slate-400 text-sm leading-relaxed">
-                Transform any Latin text into 20+ cinematic Unicode styles. Perfect for Facebook, Instagram, and Twitter headlines.
-              </p>
-            </div>
-            <div className="glass-card p-8 rounded-3xl hover:bg-white/[0.07] transition-all group">
-              <div className="bg-indigo-500/10 p-3 rounded-2xl w-fit mb-6 text-indigo-400 group-hover:bg-indigo-500 group-hover:text-white transition-all">
-                <Languages className="w-6 h-6" />
+            </motion.div>
+
+            {/* Bottom Ad Space */}
+            <motion.div variants={itemVariants} className="w-full h-[120px] glass-card rounded-3xl border border-dashed border-white/10 flex flex-col items-center justify-center p-4 relative group">
+               <div className="absolute top-4 left-6 flex items-center gap-2">
+                 <div className="w-1.5 h-1.5 rounded-full bg-slate-700" />
+                 <span className="text-[8px] uppercase font-black tracking-widest text-slate-700">Advertisement Space</span>
+               </div>
+               <p className="text-slate-600 text-xs font-bold uppercase tracking-[0.2em] group-hover:text-indigo-500/40 transition-colors">
+                 Your Ad Placement Here
+               </p>
+            </motion.div>
+
+            {/* FAQ Section (AEO) Section (Relocated below editor) */}
+            <motion.section variants={itemVariants}>
+              <div className="text-center mb-12">
+                 <h2 className="text-2xl font-black text-white mb-4">Questions & Answers</h2>
+                 <p className="text-slate-600 font-bold text-[10px] uppercase tracking-widest italic">SocialFont.space Engine</p>
               </div>
-              <h3 className="text-lg font-bold mb-3">Global Support</h3>
-              <p className="text-slate-400 text-sm leading-relaxed">
-                First-class support for Bengali, Arabic, Cyrillic, and Devanagari. We use fallback decorators when direct styling isn't possible.
-              </p>
-            </div>
-            <div className="glass-card p-8 rounded-3xl hover:bg-white/[0.07] transition-all group">
-              <div className="bg-indigo-500/10 p-3 rounded-2xl w-fit mb-6 text-indigo-400 group-hover:bg-indigo-500 group-hover:text-white transition-all">
-                <Check className="w-6 h-6" />
+              <div className="grid md:grid-cols-2 gap-6">
+                {[
+                  { q: "FB bold text?", a: "SocialFont uses Unicode characters compatible with Facebook posts/bios." },
+                  { q: "Insta fonts?", a: "Fully compatible with Instagram bios, captions, and comments." },
+                ].map((faq, i) => (
+                  <div key={i} className="glass-card p-6 rounded-3xl border-white/5">
+                    <h4 className="text-sm font-black mb-3 text-white flex gap-2">
+                       <span className="text-indigo-500">Q.</span> {faq.q}
+                    </h4>
+                    <p className="text-slate-400 text-xs leading-relaxed pl-5 border-l border-white/5">{faq.a}</p>
+                  </div>
+                ))}
               </div>
-              <h3 className="text-lg font-bold mb-3">Copy & Deploy</h3>
-              <p className="text-slate-400 text-sm leading-relaxed">
-                Our formatter ensures high contrast and clarity. Simply format, copy, and paste anywhere — no extra apps required.
-              </p>
-            </div>
-          </motion.div>
+            </motion.section>
+          </div>
+
+          {/* Right Sidebar: Ad Space Skycraper */}
+          <motion.aside variants={itemVariants} className="hidden xl:block h-full">
+             <div className="glass-card rounded-[2rem] p-6 h-fit min-h-[500px] sticky top-32 flex flex-col items-center justify-center border-dashed border-white/10 relative group">
+                <div className="absolute top-4 px-4 py-1.5 rounded-full bg-slate-900 border border-white/5 flex items-center gap-2">
+                  <div className="w-1 h-1 rounded-full bg-slate-700" />
+                  <span className="text-[7px] uppercase font-black tracking-[0.2em] text-slate-500">Sponsored Section</span>
+                </div>
+                
+                <div className="flex flex-col items-center gap-8 opacity-20 group-hover:opacity-40 transition-opacity">
+                  <Layout className="w-12 h-12 text-slate-500" />
+                  <div className="flex flex-col items-center gap-2">
+                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">Premium Ad Slot</p>
+                    <p className="text-[10px] font-bold text-slate-600">300 x 600 px</p>
+                  </div>
+                </div>
+
+                <div className="absolute bottom-8 px-6 text-center">
+                   <p className="text-[8px] font-bold text-slate-700 leading-relaxed uppercase tracking-widest">
+                     Place your brand here to reach creators and designers.
+                   </p>
+                </div>
+             </div>
+          </motion.aside>
         </motion.div>
       </main>
 
@@ -458,57 +561,73 @@ function MainApp() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-midnight/80 backdrop-blur-md flex items-center justify-center z-[1000] p-4"
+            className="fixed inset-0 bg-midnight/60 backdrop-blur-xl flex items-center justify-center z-[1000] p-4 overflow-hidden"
           >
+            {/* Animated Background Aura */}
+            <div className="absolute inset-0 pointer-events-none overflow-hidden">
+               <div className="absolute top-[20%] left-[30%] w-[400px] h-[400px] bg-indigo-600/20 rounded-full blur-[120px] animate-orb" />
+               <div className="absolute bottom-[20%] right-[30%] w-[400px] h-[400px] bg-indigo-400/10 rounded-full blur-[100px] animate-orb" style={{ animationDelay: '-5s' }} />
+               <div className="absolute top-[50%] left-[50%] -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-white/[0.02] rounded-full blur-[150px]" />
+            </div>
+
             <motion.div
-              initial={{ scale: 0.9, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.9, y: 20 }}
-              className="glass-card rounded-[2.5rem] p-10 max-w-lg w-full shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] relative overflow-hidden"
+              initial={{ scale: 0.85, y: 30, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.85, y: 30, opacity: 0 }}
+              transition={{ type: "spring", damping: 20, stiffness: 100 }}
+              className="glass-card-premium rounded-[3rem] p-12 max-w-lg w-full relative overflow-hidden"
             >
-              <div className="absolute top-0 right-0 p-8 opacity-10">
-                <Sparkles className="w-24 h-24 text-white" />
+              {/* Status Badge */}
+              <div className="flex justify-center mb-8">
+                <div className="px-4 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
+                  <span className="text-[10px] uppercase font-black tracking-[0.2em] text-indigo-300">Cloud Sync Ready</span>
+                </div>
+              </div>
+
+              <div className="text-center relative z-10">
+                <h3 className="text-4xl font-black mb-4 text-white leading-tight">Don't lose your sparkle.</h3>
+                <p className="mb-10 text-slate-400 leading-relaxed font-medium px-4">
+                  Connect your email to save designs and access your timeline from any device.
+                </p>
+                
+                <form onSubmit={handleEmailSubmit} className="flex flex-col gap-5">
+                  <div className="relative group">
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="Enter your email"
+                      className="w-full px-6 py-5 bg-white/[0.03] border border-white/5 rounded-[1.5rem] focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 outline-none transition-all placeholder-slate-600 text-lg font-medium text-center"
+                      required
+                    />
+                  </div>
+                  
+                  <div className="flex flex-col gap-4 mt-2">
+                    <button
+                      type="submit"
+                      className="shimmer-bg w-full py-5 rounded-[1.5rem] font-black text-white bg-indigo-600 hover:bg-indigo-500 transition-all shadow-[0_20px_40px_-10px_rgba(99,102,241,0.4)] active:scale-[0.98] flex items-center justify-center gap-2"
+                    >
+                      <Sparkles className="w-5 h-5" />
+                      <span>Sync My Work</span>
+                    </button>
+                    
+                    <button
+                      type="button"
+                      onClick={() => setShowEmailPopup(false)}
+                      className="w-full py-4 rounded-2xl font-bold text-slate-500 hover:text-slate-300 transition-all text-sm"
+                    >
+                      Maybe later
+                    </button>
+                  </div>
+                </form>
               </div>
               
-              <div className="w-16 h-1 bg-indigo-500 mb-8 rounded-full" />
-              <h3 className="text-3xl font-black mb-4 pr-12">Cloud Sync Activation</h3>
-              <p className="mb-8 text-slate-400 leading-relaxed font-medium">
-                Link your email to save your formatted posts and access your timeline across all devices.
-              </p>
-              
-              <form onSubmit={handleEmailSubmit} className="flex flex-col gap-4">
-                <div className="relative group">
-                   <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="name@example.com"
-                    className="w-full p-5 bg-white/5 border border-white/10 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all placeholder-slate-600 text-lg font-medium"
-                    required
-                  />
-                </div>
-                
-                <div className="flex gap-4 mt-2">
-                  <button
-                    type="button"
-                    onClick={() => setShowEmailPopup(false)}
-                    className="flex-1 p-5 rounded-2xl font-bold text-slate-400 hover:bg-white/5 transition-all active:scale-95"
-                  >
-                    Skip for now
-                  </button>
-                  <button
-                    type="submit"
-                    className="flex-3 p-5 rounded-2xl font-black text-white bg-indigo-electric hover:bg-indigo-500 transition-all shadow-xl shadow-indigo-500/20 active:scale-95 flex items-center justify-center gap-2"
-                  >
-                    <span>Connect Account</span>
-                    <ArrowRight className="w-5 h-5" />
-                  </button>
-                </div>
-              </form>
-              
-              <p className="mt-8 text-center text-[10px] text-slate-500 uppercase tracking-widest font-bold">
-                By connecting, you agree to our terms of service.
-              </p>
+              <div className="mt-10 pt-8 border-t border-white/5">
+                <p className="text-center text-[9px] text-slate-600 uppercase tracking-[0.3em] font-bold">
+                  Instant Sync • Priority Access • Privacy First
+                </p>
+              </div>
             </motion.div>
           </motion.div>
         )}
