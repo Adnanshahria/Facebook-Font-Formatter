@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Users, FileText, Lock, Search, Filter, ArrowLeft, TrendingUp, Calendar, Trash2, Mail, ExternalLink, Clock } from 'lucide-react';
+import { Users, FileText, Lock, Search, Filter, ArrowLeft, TrendingUp, Calendar, Trash2, Mail, ExternalLink, Clock, Settings, Save, ShieldCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
+import Logo from './Logo';
 
 interface Stats {
   totalVisits: number;
@@ -18,7 +19,86 @@ export default function AdminPanel() {
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [loginError, setLoginError] = useState('');
+  const [heroFeatures, setHeroFeatures] = useState([
+    { icon: 'Zap', title: 'Instant Format', desc: '20+ Cinematic Unicode styles.' },
+    { icon: 'Languages', title: 'Global Support', desc: 'Bengali, Arabic & Cyrillic fallback.' },
+    { icon: 'Check', title: 'Copy & Deploy', desc: 'Works on FB, IG, X & Threads.' }
+  ]);
+  const [partnerBanner, setPartnerBanner] = useState({
+    enabled: true,
+    url: 'https://orbitsaas.cloud',
+    title: 'OrbitSaaS.cloud',
+    desc: 'Scaling next-gen software solutions. Turn your ideas into powerful cloud applications.',
+    badge: 'Partner',
+    cta: 'Explore Services'
+  });
+  const [footerSettings, setFooterSettings] = useState({
+    orbitUrl: 'https://orbitsaas.cloud',
+    facebookUrl: '',
+    instagramUrl: '',
+    whatsappUrl: ''
+  });
+  const [footerCredits, setFooterCredits] = useState({
+    copyright: "© 2026 OrbitSaaS. All rights reserved.",
+    tagline1: "SocialFont Engine • Engineered for Quality",
+    tagline2: "Pure Unicode • No External Fonts Required"
+  });
+  const [legalContent, setLegalContent] = useState({
+    privacy: "",
+    terms: "",
+    contact: ""
+  });
+  const [savingSettings, setSavingSettings] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetch('/api/settings')
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.hero_features) setHeroFeatures(data.hero_features);
+          if (data && data.partner_banner) setPartnerBanner(data.partner_banner);
+          if (data && data.footer_settings) setFooterSettings(data.footer_settings);
+          if (data && data.footer_credits) setFooterCredits(data.footer_credits);
+          if (data) setLegalContent({
+            privacy: data.privacy_content || "",
+            terms: data.terms_content || "",
+            contact: data.contact_content || ""
+          });
+        });
+    }
+  }, [isAuthenticated]);
+
+  const handleSaveSettings = async () => {
+    setSavingSettings(true);
+    try {
+      await fetch('/api/admin/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          password: accessCode,
+          settings: { 
+            hero_features: heroFeatures, 
+            partner_banner: partnerBanner,
+            footer_settings: footerSettings,
+            footer_credits: footerCredits,
+            privacy_content: legalContent.privacy,
+            terms_content: legalContent.terms,
+            contact_content: legalContent.contact
+          }
+        })
+      });
+    } catch(err) {
+      console.error(err);
+    }
+    setSavingSettings(false);
+  };
+
+  const handleFeatureChange = (index: number, field: string, value: string) => {
+    const newFeatures = [...heroFeatures];
+    newFeatures[index] = { ...newFeatures[index], [field]: value };
+    setHeroFeatures(newFeatures);
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,9 +153,7 @@ export default function AdminPanel() {
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-indigo-500 to-transparent opacity-50" />
           
           <div className="flex justify-center mb-8">
-            <div className="w-20 h-20 bg-indigo-500/10 text-indigo-500 rounded-3xl flex items-center justify-center shadow-inner">
-              <Lock className="w-10 h-10" />
-            </div>
+            <Logo className="w-24 h-24 drop-shadow-[0_0_15px_rgba(99,102,241,0.5)]" />
           </div>
           
           <h2 className="text-3xl font-black text-center mb-2">Internal Access</h2>
@@ -116,9 +194,12 @@ export default function AdminPanel() {
       <div className="max-w-7xl mx-auto space-y-12">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-8 border-b border-white/5">
-          <div>
-            <h1 className="text-4xl font-black tracking-tight mb-2">System Console</h1>
-            <p className="text-slate-500 font-bold uppercase tracking-[0.2em] text-[10px]">Advanced Lifecycle Intelligence</p>
+          <div className="flex items-center gap-4">
+            <Logo className="w-12 h-12 flex-shrink-0" />
+            <div>
+              <h1 className="text-4xl font-black tracking-tight mb-2">System Console</h1>
+              <p className="text-slate-500 font-bold uppercase tracking-[0.2em] text-[10px]">Advanced Lifecycle Intelligence</p>
+            </div>
           </div>
           <div className="flex items-center gap-4">
             <div className="relative group">
@@ -151,6 +232,172 @@ export default function AdminPanel() {
               <h3 className="text-3xl font-black">{stat.value}</h3>
             </motion.div>
           ))}
+        </div>
+
+        {/* Site Settings */}
+        <div className="glass-card rounded-[2.5rem] overflow-hidden flex flex-col mb-12">
+          <div className="p-8 border-b border-white/5 bg-white/[0.02] flex items-center justify-between">
+            <h2 className="text-xl font-black flex items-center gap-3">
+              <Settings className="w-5 h-5 text-indigo-400" />
+              Site Features Configuration
+            </h2>
+            <button 
+              onClick={handleSaveSettings} 
+              disabled={savingSettings}
+              className="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 rounded-xl text-xs font-bold transition-colors flex items-center gap-2"
+            >
+              {savingSettings ? "Saving..." : <><Save className="w-4 h-4" /> Save Settings</>}
+            </button>
+          </div>
+          <div className="p-8 grid md:grid-cols-3 gap-6">
+            {heroFeatures.map((f, i) => (
+              <div key={i} className="flex flex-col gap-4 p-4 rounded-xl border border-white/10 bg-black/20">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] text-slate-400 uppercase font-black uppercase tracking-widest">Icon (Lucide Node)</label>
+                  <input type="text" value={f.icon} onChange={e => handleFeatureChange(i, 'icon', e.target.value)} className="bg-white/5 p-2 rounded-lg text-sm outline-none w-full border border-white/5 focus:border-indigo-500/50" />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] text-slate-400 uppercase font-black uppercase tracking-widest">Title</label>
+                  <input type="text" value={f.title} onChange={e => handleFeatureChange(i, 'title', e.target.value)} className="bg-white/5 p-2 rounded-lg text-sm outline-none w-full border border-white/5 focus:border-indigo-500/50" />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] text-slate-400 uppercase font-black uppercase tracking-widest">Description</label>
+                  <input type="text" value={f.desc} onChange={e => handleFeatureChange(i, 'desc', e.target.value)} className="bg-white/5 p-2 rounded-lg text-sm outline-none w-full border border-white/5 focus:border-indigo-500/50" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Partner Banner Config */}
+        <div className="glass-card rounded-[2.5rem] overflow-hidden flex flex-col mb-12">
+          <div className="p-8 border-b border-white/5 bg-white/[0.02] flex items-center justify-between">
+            <h2 className="text-xl font-black flex items-center gap-3">
+              <ExternalLink className="w-5 h-5 text-indigo-400" />
+              Partner Banner Configuration
+            </h2>
+            <div className="flex items-center gap-3">
+              <span className="text-[10px] uppercase font-black tracking-widest text-slate-400">Enable</span>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  className="sr-only peer" 
+                  checked={partnerBanner.enabled}
+                  onChange={(e) => setPartnerBanner({ ...partnerBanner, enabled: e.target.checked })}
+                />
+                <div className="w-9 h-5 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-500"></div>
+              </label>
+            </div>
+          </div>
+          <div className={`transition-all duration-300 ${partnerBanner.enabled ? 'opacity-100' : 'opacity-40 pointer-events-none'}`}>
+            <div className="p-8 grid md:grid-cols-2 gap-6">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] text-slate-400 uppercase font-black tracking-widest">Banner Title</label>
+                <input type="text" value={partnerBanner.title} onChange={e => setPartnerBanner({ ...partnerBanner, title: e.target.value })} className="bg-white/5 p-2 rounded-lg text-sm outline-none w-full border border-white/5 focus:border-indigo-500/50" />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] text-slate-400 uppercase font-black tracking-widest">Target URL</label>
+                <input type="text" value={partnerBanner.url} onChange={e => setPartnerBanner({ ...partnerBanner, url: e.target.value })} className="bg-white/5 p-2 rounded-lg text-sm outline-none w-full border border-white/5 focus:border-indigo-500/50" />
+              </div>
+              <div className="flex flex-col gap-1.5 md:col-span-2">
+                <label className="text-[10px] text-slate-400 uppercase font-black tracking-widest">Description</label>
+                <textarea rows={2} value={partnerBanner.desc} onChange={e => setPartnerBanner({ ...partnerBanner, desc: e.target.value })} className="bg-white/5 p-2 rounded-lg text-sm outline-none w-full border border-white/5 focus:border-indigo-500/50 resize-none" />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] text-slate-400 uppercase font-black tracking-widest">Badge Text</label>
+                <input type="text" value={partnerBanner.badge} onChange={e => setPartnerBanner({ ...partnerBanner, badge: e.target.value })} className="bg-white/5 p-2 rounded-lg text-sm outline-none w-full border border-white/5 focus:border-indigo-500/50" />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] text-slate-400 uppercase font-black tracking-widest">CTA Text</label>
+                <input type="text" value={partnerBanner.cta} onChange={e => setPartnerBanner({ ...partnerBanner, cta: e.target.value })} className="bg-white/5 p-2 rounded-lg text-sm outline-none w-full border border-white/5 focus:border-indigo-500/50" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer & Social Config */}
+        <div className="glass-card rounded-[2.5rem] overflow-hidden flex flex-col mb-12">
+          <div className="p-8 border-b border-white/5 bg-white/[0.02] flex items-center justify-between">
+            <h2 className="text-xl font-black flex items-center gap-3">
+              <Mail className="w-5 h-5 text-indigo-400" />
+              Footer & Social Connectivity
+            </h2>
+          </div>
+          <div className="p-8 grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[10px] text-slate-400 uppercase font-black tracking-widest">Orbit SaaS URL</label>
+              <input type="text" value={footerSettings.orbitUrl} onChange={e => setFooterSettings({ ...footerSettings, orbitUrl: e.target.value })} className="bg-white/5 p-2 rounded-lg text-sm outline-none w-full border border-white/5 focus:border-indigo-500/50" />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[10px] text-slate-400 uppercase font-black tracking-widest">Facebook Profile</label>
+              <input type="text" value={footerSettings.facebookUrl} onChange={e => setFooterSettings({ ...footerSettings, facebookUrl: e.target.value })} className="bg-white/5 p-2 rounded-lg text-sm outline-none w-full border border-white/5 focus:border-indigo-500/50" />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[10px] text-slate-400 uppercase font-black tracking-widest">Instagram Handle</label>
+              <input type="text" value={footerSettings.instagramUrl} onChange={e => setFooterSettings({ ...footerSettings, instagramUrl: e.target.value })} className="bg-white/5 p-2 rounded-lg text-sm outline-none w-full border border-white/5 focus:border-indigo-500/50" />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[10px] text-slate-400 uppercase font-black tracking-widest">WhatsApp Contact</label>
+              <input type="text" value={footerSettings.whatsappUrl} onChange={e => setFooterSettings({ ...footerSettings, whatsappUrl: e.target.value })} className="bg-white/5 p-2 rounded-lg text-sm outline-none w-full border border-white/5 focus:border-indigo-500/50" />
+            </div>
+          </div>
+          
+          <div className="p-8 border-t border-white/5 grid md:grid-cols-3 gap-6 bg-white/[0.01]">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[10px] text-slate-400 uppercase font-black tracking-widest">Copyright Text</label>
+              <input type="text" value={footerCredits.copyright} onChange={e => setFooterCredits({ ...footerCredits, copyright: e.target.value })} className="bg-white/5 p-2 rounded-lg text-sm outline-none w-full border border-white/5 focus:border-indigo-500/50" />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[10px] text-slate-400 uppercase font-black tracking-widest">Engine Tagline</label>
+              <input type="text" value={footerCredits.tagline1} onChange={e => setFooterCredits({ ...footerCredits, tagline1: e.target.value })} className="bg-white/5 p-2 rounded-lg text-sm outline-none w-full border border-white/5 focus:border-indigo-500/50" />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[10px] text-slate-400 uppercase font-black tracking-widest">Tech Tagline</label>
+              <input type="text" value={footerCredits.tagline2} onChange={e => setFooterCredits({ ...footerCredits, tagline2: e.target.value })} className="bg-white/5 p-2 rounded-lg text-sm outline-none w-full border border-white/5 focus:border-indigo-500/50" />
+            </div>
+          </div>
+        </div>
+
+        {/* Legal Content Config */}
+        <div className="glass-card rounded-[2.5rem] overflow-hidden flex flex-col mb-12">
+          <div className="p-8 border-b border-white/5 bg-white/[0.02] flex items-center justify-between">
+            <h2 className="text-xl font-black flex items-center gap-3">
+              <ShieldCheck className="w-5 h-5 text-indigo-400" />
+              Legal Document Configuration
+            </h2>
+          </div>
+          <div className="p-8 grid md:grid-cols-3 gap-8">
+            <div className="flex flex-col gap-3">
+               <label className="text-[10px] text-slate-400 uppercase font-black tracking-widest">Privacy Policy Content</label>
+               <textarea 
+                 rows={15} 
+                 value={legalContent.privacy} 
+                 onChange={e => setLegalContent({ ...legalContent, privacy: e.target.value })} 
+                 className="bg-white/5 p-4 rounded-2xl text-xs outline-none w-full border border-white/5 focus:border-indigo-500/50 font-mono leading-relaxed" 
+                 placeholder="Markdown-friendly content..."
+               />
+            </div>
+            <div className="flex flex-col gap-3">
+               <label className="text-[10px] text-slate-400 uppercase font-black tracking-widest">Terms of Service Content</label>
+               <textarea 
+                 rows={15} 
+                 value={legalContent.terms} 
+                 onChange={e => setLegalContent({ ...legalContent, terms: e.target.value })} 
+                 className="bg-white/5 p-4 rounded-2xl text-xs outline-none w-full border border-white/5 focus:border-indigo-500/50 font-mono leading-relaxed" 
+                 placeholder="Markdown-friendly content..."
+               />
+            </div>
+            <div className="flex flex-col gap-3">
+               <label className="text-[10px] text-slate-400 uppercase font-black tracking-widest">Contact Support Content</label>
+               <textarea 
+                 rows={15} 
+                 value={legalContent.contact} 
+                 onChange={e => setLegalContent({ ...legalContent, contact: e.target.value })} 
+                 className="bg-white/5 p-4 rounded-2xl text-xs outline-none w-full border border-white/5 focus:border-indigo-500/50 font-mono leading-relaxed" 
+                 placeholder="Markdown-friendly content..."
+               />
+            </div>
+          </div>
         </div>
 
         {/* Capture Logs (Table Format) */}

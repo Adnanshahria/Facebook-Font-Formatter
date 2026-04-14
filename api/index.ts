@@ -57,6 +57,12 @@ async function initDb() {
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )
     `);
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS settings (
+        id TEXT PRIMARY KEY,
+        data TEXT NOT NULL
+      )
+    `);
   } catch (err) {
     console.error('Error initializing database:', err);
   }
@@ -66,6 +72,42 @@ async function initDb() {
 initDb();
 
 // Endpoints
+app.get('/api/settings', async (req, res) => {
+  try {
+    const result = await db.execute("SELECT data FROM settings WHERE id = 'site_config'");
+    if (result.rows.length > 0) {
+      res.json(JSON.parse(result.rows[0].data as string));
+    } else {
+      res.json({});
+    }
+  } catch (err) {
+    console.error('Error fetching settings:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.post('/api/admin/settings', async (req, res) => {
+  const { password, settings } = req.body;
+  const adminPassword = process.env.VITE_ADMIN_PASSWORD || 'admin123';
+
+  if (password !== adminPassword) return res.status(401).json({ error: 'Unauthorized' });
+
+  try {
+    await db.execute({
+      sql: `
+        INSERT INTO settings (id, data) 
+        VALUES ('site_config', ?)
+        ON CONFLICT(id) DO UPDATE SET data = excluded.data
+      `,
+      args: [JSON.stringify(settings)]
+    });
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error saving settings:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 app.post('/api/visitors', async (req, res) => {
   const { id } = req.body;
   if (!id || typeof id !== 'string') return res.status(400).json({ error: 'Invalid visitor ID' });

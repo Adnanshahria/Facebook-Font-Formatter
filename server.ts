@@ -75,6 +75,76 @@ const db = createClient({
 async function initDb() {
   try {
     await db.execute(`
+      CREATE TABLE IF NOT EXISTS site_settings (
+        setting_key TEXT PRIMARY KEY,
+        setting_value TEXT NOT NULL
+      )
+    `);
+    
+    // Seed default if empty
+    try {
+      const checkSettings = await db.execute("SELECT COUNT(*) as count FROM site_settings");
+      if (Number(checkSettings.rows[0].count) === 0) {
+        await db.execute({
+          sql: "INSERT INTO site_settings (setting_key, setting_value) VALUES (?, ?)",
+          args: ['hero_features', JSON.stringify([
+            { icon: 'Zap', title: "Instant Format", desc: "20+ Cinematic Unicode styles." },
+            { icon: 'Languages', title: "Global Support", desc: "Bengali, Arabic & Cyrillic fallback." },
+            { icon: 'Check', title: "Copy & Deploy", desc: "Works on FB, IG, X & Threads." }
+          ])]
+        });
+
+        await db.execute({
+          sql: "INSERT INTO site_settings (setting_key, setting_value) VALUES (?, ?)",
+          args: ['partner_banner', JSON.stringify({
+            enabled: true,
+            url: "https://orbitsaas.cloud",
+            title: "OrbitSaaS.cloud",
+            desc: "Scaling next-gen software solutions. Turn your ideas into powerful cloud applications.",
+            badge: "Partner",
+            cta: "Explore Services"
+          })]
+        });
+
+        await db.execute({
+          sql: "INSERT INTO site_settings (setting_key, setting_value) VALUES (?, ?)",
+          args: ['footer_settings', JSON.stringify({
+            orbitUrl: 'https://orbitsaas.cloud',
+            facebookUrl: '',
+            instagramUrl: '',
+            whatsappUrl: ''
+          })]
+        });
+
+        await db.execute({
+          sql: "INSERT INTO site_settings (setting_key, setting_value) VALUES (?, ?)",
+          args: ['footer_credits', JSON.stringify({
+            copyright: "© 2026 OrbitSaaS. All rights reserved.",
+            tagline1: "SocialFont Engine • Engineered for Quality",
+            tagline2: "Pure Unicode • No External Fonts Required"
+          })]
+        });
+
+        await db.execute({
+          sql: "INSERT INTO site_settings (setting_key, setting_value) VALUES (?, ?)",
+          args: ['privacy_content', "At SocialFont, we prioritize your privacy. The text you format using our tool is processed entirely within your browser (client-side) unless you explicitly use our premium cloud-sync features by providing your email address.\n\n### 1. Information We Collect\nIf you choose to provide your email address for cloud synchronization, we use it solely to securely associate your formatted content with your account across devices. We do not sell, rent, or share your personal information or formatted text with third parties.\n\n### 2. Third-Party Advertisements\nWe use Google AdSense to serve ads on our site. Google may use cookies to serve ads based on your prior visits to our website or other websites. You can opt out of personalized advertising by visiting Google's Ads Settings."]
+        });
+
+        await db.execute({
+          sql: "INSERT INTO site_settings (setting_key, setting_value) VALUES (?, ?)",
+          args: ['terms_content', "### 1. Acceptance of Terms\nBy accessing and using SocialFont, you accept and agree to be bound by the terms and provisions of this agreement. If you do not agree to abide by these terms, please do not use this service.\n\n### 2. Description of Service\nSocialFont provides a free online tool for converting standard text into formatted Unicode characters intended for use on social media platforms.\n\n### 3. User Conduct\nYou agree to use the service only for lawful purposes. You are solely responsible for the content you generate and paste onto other platforms."]
+        });
+
+        await db.execute({
+          sql: "INSERT INTO site_settings (setting_key, setting_value) VALUES (?, ?)",
+          args: ['contact_content', "### General Inquiries & Support\nFor questions, feedback, or technical support regarding the formatting engine, please reach out to us at: support@socialfont.space\n\n### Business & Partnerships\nInterested in advertising or integrating our engine? Contact our partnership team: partners@orbitsaas.cloud"]
+        });
+      }
+    } catch(e) {
+      console.log('Error seeding settings:', e);
+    }
+
+    await db.execute(`
       CREATE TABLE IF NOT EXISTS visitors (
         id TEXT PRIMARY KEY,
         visit_count INTEGER DEFAULT 1,
@@ -101,6 +171,23 @@ async function initDb() {
 initDb();
 
 // Endpoints
+app.get('/api/settings', async (req, res) => {
+  try {
+    const result = await db.execute('SELECT * FROM site_settings');
+    const settings = result.rows.reduce((acc: any, row) => {
+      try {
+        acc[String(row.setting_key)] = JSON.parse(String(row.setting_value));
+      } catch (e) {
+        acc[String(row.setting_key)] = String(row.setting_value);
+      }
+      return acc;
+    }, {});
+    res.json(settings);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch settings' });
+  }
+});
+
 app.post('/api/visitors', async (req, res) => {
   const { id } = req.body;
   if (!id || typeof id !== 'string') return res.status(400).json({ error: 'Invalid visitor ID' });
@@ -183,6 +270,29 @@ app.post('/api/admin/data', adminLimiter, async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
+app.post('/api/admin/settings', adminLimiter, async (req, res) => {
+  const { password, settings } = req.body;
+  const adminPassword = process.env.VITE_ADMIN_PASSWORD || 'admin123';
+
+  if (password !== adminPassword) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  try {
+    for (const key of Object.keys(settings)) {
+      await db.execute({
+        sql: 'INSERT INTO site_settings (setting_key, setting_value) VALUES (?, ?) ON CONFLICT(setting_key) DO UPDATE SET setting_value = excluded.setting_value',
+        args: [key, JSON.stringify(settings[key])]
+      });
+    }
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error saving admin settings:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 
 // Centralized Error Handler
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {

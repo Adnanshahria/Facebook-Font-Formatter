@@ -28,7 +28,6 @@
       radial-gradient(circle at 100% 100%, rgba(99, 102, 241, 0.1) 0%, transparent 50%);
     pointer-events: none;
     z-index: -1;
-    transform: translateZ(0);
   }
 
   h1, h2, h3, h4 {
@@ -39,14 +38,10 @@
 @layer components {
   .glass-card {
     @apply bg-white/5 backdrop-blur-md border border-white/10 shadow-2xl;
-    transform: translateZ(0);
-    will-change: transform, backdrop-filter;
   }
   
   .glass-toolbar {
     @apply bg-midnight/80 backdrop-blur-sm border border-white/5 shadow-2xl;
-    transform: translateZ(0);
-    will-change: transform, backdrop-filter;
   }
 
   .premium-input {
@@ -63,14 +58,52 @@
 }
 
 .passage-field {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   font-feature-settings: "liga" 1, "clig" 1, "kern" 1;
-  line-height: 1.8;
-  -webkit-touch-callout: none; /* Disable default callout on iOS */
+  line-height: normal;
+  -webkit-touch-callout: none;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(99, 102, 241, 0.3) transparent;
+}
+
+/* Custom scrollbar for WebKit browsers */
+.passage-field::-webkit-scrollbar {
+  width: 6px;
+}
+
+.passage-field::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.passage-field::-webkit-scrollbar-thumb {
+  background: rgba(99, 102, 241, 0.2);
+  border-radius: 10px;
+  transition: background 0.3s;
+}
+
+.passage-field::-webkit-scrollbar-thumb:hover {
+  background: rgba(99, 102, 241, 0.4);
 }
 
 /* Custom passage field styling */
 .passage-field::selection {
   background: rgba(99, 102, 241, 0.2);
+}
+
+.hide-selection::selection {
+  background: transparent !important;
+  color: inherit !important;
+}
+
+.visual-strike {
+  text-decoration: line-through;
+  text-decoration-thickness: 1.5px;
+}
+
+.visual-underline {
+  text-decoration: underline;
+  text-decoration-thickness: 1.5px;
 }
 
 /* Premium Animations */
@@ -112,5 +145,26 @@
 
 .glass-card-premium {
   @apply bg-white/[0.03] backdrop-blur-3xl border border-white/10 shadow-[0_24px_48px_-12px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.05)];
-  will-change: transform, backdrop-filter;
+}
+
+@keyframes marquee {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-100%); }
+}
+
+@keyframes marquee2 {
+  0% { transform: translateX(100%); }
+  100% { transform: translateX(0%); }
+}
+
+.animate-marquee {
+  animation: marquee 25s linear infinite;
+}
+
+.animate-marquee2 {
+  animation: marquee2 25s linear infinite;
+}
+
+.pause-animation {
+  animation-play-state: paused;
 }

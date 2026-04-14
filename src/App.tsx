@@ -1,32 +1,33 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import AdminPanel from './AdminPanel';
+import EditorToolbar from './components/EditorToolbar';
+import TextWorkspace from './components/TextWorkspace';
 import { 
-  Bold, 
-  Italic, 
-  Strikethrough, 
-  Underline, 
   Copy, 
   Trash2, 
-  Download, 
   Smile, 
   Search,
   Check,
-  Layout,
-  Eraser,
-  Share2,
   Languages,
-  Type as MonospaceIcon,
+  ArrowRight,
+  ExternalLink,
+  Rocket,
+  AtSign,
+  Undo2,
   PenTool,
-  Hash,
-  Square,
-  Circle,
-  Zap,
-  Sparkles,
-  ArrowRight
+  Wand2,
+  Keyboard,
+  MousePointer2,
+  ClipboardType,
+  Facebook,
+  Instagram,
+  Twitter,
+  Sparkles
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import * as unicode from './lib/unicodeUtils';
+import Logo from './Logo';
 
 const filteredEmojis = [
   '😀', '😃', '😄', '😁', '😆', '😅', '😂', '😊', '😍', '🥰', '😘', '😋', '😎', '🤩', '🥳', '😏', '🤔', '🤭', '🤫', '🤥', '😶', '😐', '😑', '😬', '🙄', '😯', '😦', '😧', '😮', '😲', '🥱', '😴', '🤤', '😪', '😵', '🤐', 
@@ -34,25 +35,7 @@ const filteredEmojis = [
   '❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❣️', '💕', '✨', '🌟', '⭐', '💫', '🔥', '💥', '⚡', '🌈', '☀️', '🌊'
 ];
 
-const toolbarOptions = [
-  { icon: <Bold className="w-5 h-5" />, label: 'Bold', displayLabel: 'Bold', func: unicode.toFacebookBold },
-  { icon: <Italic className="w-5 h-5" />, label: 'Italic', displayLabel: 'Italic', func: unicode.toFacebookItalic },
-  { icon: <Underline className="w-5 h-5" />, label: 'Underline', displayLabel: 'Line', func: unicode.toFacebookUnderline },
-  { icon: <Strikethrough className="w-5 h-5" />, label: 'Strikethrough', displayLabel: 'Strike', func: unicode.toFacebookStrikethrough },
-  { icon: <MonospaceIcon className="w-5 h-5" />, label: 'Monospace', displayLabel: 'Mono', func: unicode.toFacebookMonospace },
-  { icon: <PenTool className="w-5 h-5" />, label: 'Script', displayLabel: 'Script', func: unicode.toFacebookScript },
-  { icon: <Hash className="w-5 h-5" />, label: 'Double Struck', displayLabel: 'Double', func: unicode.toFacebookDoubleStruck },
-  { icon: <span className="font-display font-black text-lg">𝕱</span>, label: 'Fraktur', displayLabel: 'Black', func: unicode.toFacebookFraktur },
-  { icon: <Circle className="w-5 h-5" />, label: 'Bubble', displayLabel: 'Bubble', func: unicode.toFacebookBubble },
-  { icon: <div className="w-5 h-5 bg-current rounded-full" />, label: 'Bubble Filled', displayLabel: 'Bub Fill', func: (t: string) => unicode.toFacebookBubble(t, true) },
-  { icon: <Square className="w-5 h-5" />, label: 'Square', displayLabel: 'Square', func: unicode.toFacebookSquare },
-  { icon: <div className="w-5 h-5 bg-current rounded-sm" />, label: 'Square Filled', displayLabel: 'Sq Fill', func: (t: string) => unicode.toFacebookSquare(t, true) },
-  { icon: <span className="text-sm font-black">aA</span>, label: 'Sarcasm', displayLabel: 'Sarcasm', func: unicode.toSarcasmCase },
-  { icon: <div className="rotate-180 scale-x-[-1]"><Search className="w-5 h-5" /></div>, label: 'Mirror', displayLabel: 'Mirror', func: unicode.toMirrorText },
-  { icon: <span className="text-[10px] font-black underline underline-offset-4">abc</span>, label: 'Caps', displayLabel: 'Caps', func: unicode.toSmallCaps },
-  { icon: <Zap className="w-5 h-5" />, label: 'Glitch', displayLabel: 'Glitch', func: unicode.toZalgoText },
-  { icon: <Eraser className="w-5 h-5" />, label: 'Normalize', displayLabel: 'Clear', func: unicode.normalizeText, isSpecial: true },
-];
+// Variants and options moved to EditorToolbar.tsx
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -70,16 +53,91 @@ const itemVariants = {
   visible: { y: 0, opacity: 1 }
 };
 
-function MainApp() {
+const WhatsAppIcon = ({ className }: { className?: string }) => (
+  <svg 
+    viewBox="0 0 24 24" 
+    fill="currentColor" 
+    className={className}
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.3474.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.438 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+  </svg>
+);
+
+const GoogleAd = ({ className, slot, format = 'auto', responsive = 'true' }: { className?: string, slot: string, format?: string, responsive?: string }) => {
+  useEffect(() => {
+    try {
+      // @ts-ignore
+      (window.adsbygoogle = window.adsbygoogle || []).push({});
+    } catch (err) {
+      console.error(err);
+    }
+  }, []);
+
+  return (
+    <ins
+      className={`adsbygoogle ${className || ''}`}
+      style={{ display: 'block' }}
+      data-ad-client="ca-pub-5011249228990148"
+      data-ad-slot={slot}
+      data-ad-format={format}
+      data-full-width-responsive={responsive}
+    />
+  );
+};
+
+function MainApp({ 
+  siteSettings, 
+  heroFeatures, 
+  partnerBanner, 
+  footerSettings 
+}: { 
+  siteSettings: any, 
+  heroFeatures: any[], 
+  partnerBanner: any, 
+  footerSettings: any 
+}) {
   const [inputText, setInputText] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [emojiSearch, setEmojiSearch] = useState('');
   const [isCopied, setIsCopied] = useState(false);
   const [detectedScript, setDetectedScript] = useState<unicode.ScriptType>('Other');
-  const [showEmailPopup, setShowEmailPopup] = useState(false);
+  const [selectionMode, setSelectionMode] = useState<'single' | 'multi'>('multi');
+  const [savedSelections, setSavedSelections] = useState<{start: number, end: number}[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
   const [email, setEmail] = useState('');
   const [hasSelection, setHasSelection] = useState(false);
+  const [history, setHistory] = useState<string[]>([]);
+  const [redoStack, setRedoStack] = useState<string[]>([]);
+  const [showEmailPopup, setShowEmailPopup] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const backdropRef = useRef<HTMLDivElement>(null);
+  const handleScroll = (e: React.UIEvent<HTMLTextAreaElement>) => {
+    if (backdropRef.current) {
+      backdropRef.current.scrollTop = e.currentTarget.scrollTop;
+      backdropRef.current.scrollLeft = e.currentTarget.scrollLeft;
+    }
+  };
+
+
+  const getIcon = (name: string, props: any) => {
+    const icons: Record<string, any> = { Zap: Sparkles, Languages, Check, Sparkles, Star: Sparkles, ArrowRight, Wand2, Globe: Languages, ShieldCheck: Check, Heart: Smile };
+    const Icon = icons[name] || Sparkles;
+    return <Icon {...props} />;
+  };
+
+  const saveToHistory = (text: string) => {
+    setHistory(prev => [...prev, text]);
+    setRedoStack([]);
+  };
+
+  const handleUndo = () => {
+    if (history.length === 0) return;
+    const previous = history[history.length - 1];
+    setRedoStack(prev => [inputText, ...prev]);
+    setInputText(previous);
+    setHistory(prev => prev.slice(0, -1));
+  };
 
   // Visitor Tracking
   useEffect(() => {
@@ -158,13 +216,40 @@ function MainApp() {
 
   useEffect(() => {
     setDetectedScript(unicode.detectScript(inputText));
+    
+    // Save to history for typing after a short pause
+    const timer = setTimeout(() => {
+      saveToHistory(inputText);
+    }, 1000);
+    return () => clearTimeout(timer);
   }, [inputText]);
 
   const handleSelection = () => {
     const textarea = textareaRef.current;
     if (!textarea) return;
     setTimeout(() => {
-      setHasSelection(textarea.selectionStart !== textarea.selectionEnd);
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const hasSel = start !== end;
+      
+      if (selectionMode === 'multi') {
+        if (!hasSel) {
+          setSavedSelections([]);
+          setHasSelection(false);
+          return;
+        }
+
+        setSavedSelections(prev => {
+          const existIdx = prev.findIndex(s => s.start === start && s.end === end);
+          if (existIdx >= 0) {
+            return prev.filter((_, i) => i !== existIdx);
+          }
+          return [...prev, { start: start, end: end }];
+        });
+        setHasSelection(true);
+      } else {
+        setHasSelection(hasSel);
+      }
     }, 0);
   };
 
@@ -172,17 +257,66 @@ function MainApp() {
     const textarea = textareaRef.current;
     if (!textarea) return;
 
+    saveToHistory(inputText);
+
+    if (selectionMode === 'multi' && savedSelections.length > 0) {
+      let newText = inputText;
+      
+      const sortedSels = [...savedSelections].sort((a, b) => a.start - b.start);
+      let offset = 0;
+      const newSelections = [];
+
+      for (const sel of sortedSels) {
+        const adjustedStart = sel.start + offset;
+        const adjustedEnd = sel.end + offset;
+        
+        const sub = newText.substring(adjustedStart, adjustedEnd);
+        const transformed = styleFunc(sub);
+        
+        newText = newText.substring(0, adjustedStart) + transformed + newText.substring(adjustedEnd);
+        
+        const newLength = transformed.length;
+        const oldLength = adjustedEnd - adjustedStart;
+        const diff = newLength - oldLength;
+        
+        newSelections.push({ start: adjustedStart, end: adjustedStart + newLength });
+        offset += diff;
+      }
+
+      setInputText(newText);
+      setSavedSelections(newSelections);
+      setTimeout(() => {
+        if (textareaRef.current) {
+          textareaRef.current.focus();
+        }
+      }, 0);
+      return;
+    }
+
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
 
     if (start === end) return;
 
-    const selectedText = inputText.substring(start, end);
+    let selectedText = inputText.substring(start, end);
+    let prefix = '';
+    let suffix = '';
+
+    if (selectionMode === 'single') {
+      // Find the first word within the selection
+      const match = selectedText.match(/^(\s*)([^\s]+)(\s*.*)$/s);
+      if (match) {
+        prefix = match[1];
+        selectedText = match[2];
+        suffix = match[3];
+      }
+    }
+
     const transformedText = styleFunc(selectedText);
     
     const newText = 
       inputText.substring(0, start) + 
-      transformedText + 
+      prefix + transformedText + suffix + 
       inputText.substring(end);
 
     setInputText(newText);
@@ -190,7 +324,7 @@ function MainApp() {
 
     setTimeout(() => {
       if (textareaRef.current) {
-        textareaRef.current.setSelectionRange(start, start + transformedText.length);
+        textareaRef.current.setSelectionRange(start, start + prefix.length + transformedText.length + suffix.length);
       }
     }, 0);
   };
@@ -215,17 +349,15 @@ function MainApp() {
   return (
     <div className="min-h-screen">
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-white/5 bg-midnight/50 backdrop-blur-md px-6 py-4 flex items-center justify-between shadow-2xl">
+      <header className="sticky top-0 z-50 mx-auto w-full max-w-[1920px] md:w-[98%] lg:w-[96%] border-x border-b border-white/10 bg-midnight/60 backdrop-blur-2xl px-6 md:px-10 lg:pl-12 lg:pr-8 py-4 rounded-b-[2rem] flex items-center justify-between shadow-2xl shadow-indigo-500/5 transition-all duration-500">
         <motion.div 
           initial={{ x: -20, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           className="flex items-center gap-3"
         >
-          <div className="bg-gradient-to-br from-indigo-500 to-indigo-700 p-2.5 rounded-xl shadow-lg shadow-indigo-500/20">
-            <Sparkles className="text-white w-5 h-5" />
-          </div>
+          <Logo className="w-12 h-12 flex-shrink-0" />
           <div>
-            <h1 className="text-xl font-bold tracking-tight text-white">SocialFont.space</h1>
+            <h1 className="text-xl font-bold tracking-tight text-white">SocialFont</h1>
             <div className="flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
               <p className="text-[10px] uppercase tracking-[0.2em] text-slate-400 font-bold">Premium Formatter</p>
@@ -236,22 +368,56 @@ function MainApp() {
         <motion.div 
           initial={{ x: 20, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
-          className="flex items-center gap-4"
+          className="hidden md:flex items-center gap-2 lg:gap-4"
         >
-          <button 
-            onClick={handleExport}
-            className="hidden sm:flex items-center gap-2 text-slate-400 hover:text-white transition-colors py-2 px-4 rounded-xl border border-white/5 hover:bg-white/5"
+          {heroFeatures.map((feature, i) => (
+            <div key={i} className="glass-card p-2 md:px-3 md:py-2.5 rounded-xl flex items-center gap-3 bg-white/[0.01] hover:bg-white/[0.05] transition-all border-white/10">
+              <div className="bg-indigo-500/10 p-1.5 md:p-2 rounded-lg text-indigo-400">
+                 {getIcon(feature.icon, { className: "w-3 h-3 md:w-3.5 md:h-3.5" })}
+              </div>
+              <div className="flex flex-col">
+                <h3 className="text-[9px] md:text-[10px] font-black uppercase tracking-wider text-white leading-tight">{feature.title}</h3>
+                <p className="text-slate-500 text-[8px] md:text-[9px] font-medium leading-tight hidden lg:block max-w-[140px] truncate">{feature.desc}</p>
+              </div>
+            </div>
+          ))}
+
+          {/* Paid Promotion Header Card */}
+          <a 
+            href={siteSettings?.footer_settings?.whatsappUrl ? `https://wa.me/${siteSettings.footer_settings.whatsappUrl.replace(/\D/g, '')}` : '#'} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="glass-card-premium p-[1px] bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-xl flex items-center gap-3 overflow-hidden group/promo relative max-w-[200px]"
           >
-            <Download className="w-4 h-4" />
-            <span className="text-sm font-bold">Export</span>
-          </button>
-          <button 
-            onClick={handleCopy}
-            className="flex items-center gap-2 bg-indigo-electric hover:bg-indigo-500 text-white px-5 py-2.5 rounded-xl font-bold transition-all shadow-xl shadow-indigo-500/20 active:scale-95"
-          >
-            {isCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-            <span>{isCopied ? 'Copied' : 'Copy All'}</span>
-          </button>
+            <div className="bg-midnight/90 backdrop-blur-xl p-2 md:px-3 md:py-2.5 rounded-[11px] flex items-center gap-3 w-full h-full relative">
+              <div className="bg-[#25D366]/10 p-1.5 md:p-2 rounded-lg text-[#25D366] group-hover/promo:bg-[#25D366] group-hover/promo:text-white transition-all">
+                <WhatsAppIcon className="w-3 h-3 md:w-3.5 md:h-3.5" />
+              </div>
+              <div className="flex flex-col flex-1 overflow-hidden">
+                <h3 className="text-[8px] md:text-[9px] font-black uppercase tracking-wider text-[#25D366] leading-tight">Paid Promotion</h3>
+                
+                {/* Compact Marquee */}
+                <div className="relative flex overflow-x-hidden pt-0.5">
+                  <div className="animate-marquee whitespace-nowrap flex group-hover/promo:pause-animation">
+                    <span className="text-[7px] font-bold text-slate-400 uppercase tracking-tighter mr-4">
+                      Whatsapp for Ads • 
+                    </span>
+                    <span className="text-[7px] font-bold text-slate-400 uppercase tracking-tighter mr-4">
+                      Whatsapp for Ads • 
+                    </span>
+                  </div>
+                  <div className="absolute top-0 animate-marquee2 whitespace-nowrap flex group-hover/promo:pause-animation">
+                    <span className="text-[7px] font-bold text-slate-400 uppercase tracking-tighter mr-4">
+                      Whatsapp for Ads • 
+                    </span>
+                    <span className="text-[7px] font-bold text-slate-400 uppercase tracking-tighter mr-4">
+                      Whatsapp for Ads • 
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </a>
         </motion.div>
       </header>
 
@@ -260,38 +426,50 @@ function MainApp() {
           variants={containerVariants}
           initial="hidden"
           animate="visible"
-          className="flex flex-col lg:grid lg:grid-cols-[260px_1fr] xl:grid-cols-[300px_1fr_300px] gap-8 lg:items-start"
+          className="flex flex-col lg:grid lg:grid-cols-[300px_1fr] xl:grid-cols-[300px_1fr_300px] gap-8 lg:items-start"
         >
           {/* Left Sidebar: Description Workspace */}
-          <motion.aside variants={itemVariants} className="hidden lg:block sticky top-32 h-fit">
+          <motion.aside variants={itemVariants} className="hidden lg:block sticky top-32 h-fit space-y-6 z-30 overflow-visible">
             <div className="glass-card rounded-[1.5rem] p-5 border-0">
-              <div className="bg-indigo-500/10 p-3 rounded-xl w-fit mb-5 text-indigo-400">
-                <Layout className="w-6 h-6" />
-               </div>
-              <h2 className="text-xl font-black text-white mb-3 leading-tight">
+              <h2 className="text-lg font-black text-white leading-tight mb-4">
                 Enhance Your <span className="text-indigo-400">Social Presence.</span>
               </h2>
-              <div className="space-y-4">
-                <p className="text-slate-400 text-xs font-medium leading-relaxed">
+              
+              <div className="space-y-3">
+                <p className="text-slate-400 text-[10px] font-medium leading-[1.6]">
                   Elevate your profiles with cinematic formatting for:
                 </p>
-                <ul className="space-y-2.5">
+                
+                <div className="flex flex-wrap items-center justify-center gap-4 py-1">
                   {[
-                    { name: 'Facebook', icon: 'FB' },
-                    { name: 'Instagram', icon: 'INSTA' },
-                    { name: 'Twitter / X', icon: 'X' },
-                    { name: 'Threads', icon: 'TH' }
+                    { name: 'Facebook', icon: <Facebook className="w-5 h-5" />, color: '#1877F2' },
+                    { name: 'Instagram', icon: <Instagram className="w-5 h-5" />, color: '#E4405F' },
+                    { name: 'X / Twitter', icon: <Twitter className="w-5 h-5" />, color: '#1DA1F2' },
+                    { name: 'Threads', icon: <AtSign className="w-5 h-5" />, color: '#FFFFFF' }
                   ].map(platform => (
-                    <li key={platform.name} className="flex items-center gap-2.5 group translate-x-0 hover:translate-x-1.5 transition-transform">
-                      <span className="text-[8px] font-black w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center text-indigo-400 border border-white/5 group-hover:bg-indigo-500 group-hover:text-white transition-colors uppercase">
+                    <div 
+                      key={platform.name} 
+                      className="group relative cursor-pointer"
+                      title={platform.name}
+                    >
+                      <div className="absolute inset-0 bg-white/5 rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity" style={{ backgroundColor: `${platform.color}15` }} />
+                      <div className="relative w-12 h-12 rounded-2xl bg-white/[0.03] border border-white/10 flex items-center justify-center text-slate-400 group-hover:text-white group-hover:border-white/20 transition-all duration-300 group-hover:-translate-y-1 shadow-lg" style={{ color: platform.color }}>
                         {platform.icon}
-                      </span>
-                      <span className="text-xs font-bold text-slate-300">{platform.name}</span>
-                    </li>
+                      </div>
+                    </div>
                   ))}
-                </ul>
-                <div className="pt-5 border-t border-white/5 opacity-40">
-                  <p className="text-[8px] font-black uppercase tracking-[0.2em] text-slate-500">
+                </div>
+                
+                <div className="w-full text-center p-[1px] rounded-xl bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 shadow-lg shadow-indigo-500/10">
+                  <div className="bg-midnight/90 backdrop-blur-xl rounded-[11px] py-1.5 px-3">
+                    <span className="text-[8px] font-black uppercase tracking-[0.2em] bg-gradient-to-r from-indigo-400 to-pink-400 bg-clip-text text-transparent">
+                      and every other platform
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="pt-1.5 border-t border-white/5 opacity-30 text-center">
+                  <p className="text-[6.5px] font-black uppercase tracking-[0.3em] text-slate-500">
                     Engineered for Social Engines
                   </p>
                 </div>
@@ -299,259 +477,321 @@ function MainApp() {
             </div>
 
             {/* Sub-Sidebar Ad */}
-            <div className="glass-card rounded-[1.5rem] p-5 mt-6 border-dashed border-white/10 flex flex-col items-center justify-center min-h-[250px] relative group">
-               <div className="absolute top-4 px-3 py-1 rounded-full bg-slate-900/50 border border-white/5 flex items-center gap-1.5">
-                  <div className="w-1 h-1 rounded-full bg-slate-600" />
-                  <span className="text-[6px] uppercase font-black tracking-widest text-slate-500">Sponsored</span>
+            <div className="glass-card rounded-[1.5rem] mt-6 border-dashed border-white/10 flex flex-col items-center justify-center min-h-[250px] relative overflow-hidden">
+               <div className="absolute top-4 left-4 z-10 px-2 py-0.5 rounded bg-slate-900/80 border border-white/5 opacity-50">
+                  <span className="text-[5px] uppercase font-black tracking-widest text-slate-500">Sponsored</span>
                </div>
-               <div className="opacity-10 group-hover:opacity-20 transition-opacity">
-                  <Layout className="w-8 h-8 text-slate-500" />
-               </div>
-               <p className="mt-4 text-[8px] font-bold text-slate-600 uppercase tracking-[0.2em] text-center">
-                  Sidebar Ad Slot
-               </p>
+               <GoogleAd slot="1234567890" className="w-full h-full min-h-[250px]" format="rectangle" />
             </div>
+
+            {/* OrbitSaaS Special Banner */}
+            {partnerBanner.enabled && (
+              <a 
+                href={partnerBanner.url} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="mt-6 group relative block rounded-[1.5rem] overflow-hidden p-[1px] shadow-2xl"
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/40 via-purple-500/40 to-blue-500/40 opacity-50 group-hover:opacity-100 transition-opacity duration-500 animate-pulse" />
+                <div className="absolute inset-0 bg-gradient-to-br from-indigo-500 via-purple-500 to-blue-500 opacity-20 group-hover:opacity-40 transition-opacity duration-500 blur-xl" />
+                <div className="relative h-full bg-midnight/80 backdrop-blur-xl p-5 rounded-[1.5rem] border border-white/5 flex flex-col gap-3 group-hover:bg-midnight/60 transition-colors duration-500">
+                  <div className="flex items-center justify-between pointer-events-none">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center shadow-[0_0_15px_rgba(99,102,241,0.4)] group-hover:shadow-[0_0_25px_rgba(99,102,241,0.6)] transition-shadow duration-500">
+                        <Rocket className="w-4 h-4 text-indigo-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-300" />
+                      </div>
+                      <h3 className="text-white text-sm font-black flex items-center gap-1.5 group-hover:text-indigo-300 transition-colors">
+                        {partnerBanner.title}
+                        <ExternalLink className="w-3 h-3 text-slate-500 group-hover:text-white transition-colors" />
+                      </h3>
+                    </div>
+                    {partnerBanner.badge && (
+                      <span className="text-[8px] uppercase font-black tracking-[0.2em] text-indigo-400/80 bg-indigo-500/10 px-2 py-1 rounded-md">{partnerBanner.badge}</span>
+                    )}
+                  </div>
+                  
+                  <div className="mt-1 pointer-events-none">
+                    <p className="text-slate-400 text-[10px] leading-relaxed font-medium">
+                      {partnerBanner.desc}
+                    </p>
+                  </div>
+                  
+                  <div className="mt-1 pt-3 border-t border-white/5 flex items-center justify-between text-indigo-300/60 group-hover:text-indigo-400 transition-colors pointer-events-none">
+                    <span className="text-[10px] font-bold tracking-wider">{partnerBanner.cta}</span>
+                    <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+                  </div>
+                </div>
+              </a>
+            )}
           </motion.aside>
 
           {/* Main Content Area */}
-          <div className="flex flex-col gap-10 lg:mt-0">
-             {/* Trust & Onboarding Hero (Relocated to top) */}
-             <div className="space-y-6">
-                <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {[
-                    { icon: <Zap className="w-4 h-4" />, title: "Instant Format", desc: "20+ Cinematic Unicode styles." },
-                    { icon: <Languages className="w-4 h-4" />, title: "Global Support", desc: "Bengali, Arabic & Cyrillic fallback." },
-                    { icon: <Check className="w-4 h-4" />, title: "Copy & Deploy", desc: "Works on FB, IG, X & Threads." }
-                  ].map((feature, i) => (
-                    <div key={i} className="glass-card p-4 rounded-2xl flex items-center gap-4 bg-white/[0.01] hover:bg-white/[0.04] transition-all">
-                      <div className="bg-indigo-500/10 p-2.5 rounded-xl text-indigo-400">
-                        {feature.icon}
-                      </div>
-                      <div>
-                        <h3 className="text-[11px] font-black uppercase tracking-wider text-white">{feature.title}</h3>
-                        <p className="text-slate-500 text-[10px] font-medium leading-tight mt-0.5">{feature.desc}</p>
-                      </div>
-                    </div>
-                  ))}
-                </motion.div>
-
-                <motion.section variants={itemVariants} className="bg-white/[0.02] border border-white/5 rounded-3xl p-6 md:px-10">
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                    <div className="flex items-center gap-4">
-                      <div className="bg-indigo-500 w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-black shadow-[0_0_20px_rgba(99,102,241,0.3)]">01</div>
-                      <h2 className="text-sm font-black text-white uppercase tracking-widest">Master SocialFont</h2>
-                    </div>
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 md:gap-10">
-                      {[
-                        { step: "01", title: "Type", desc: "Write message" },
-                        { step: "02", title: "Select", desc: "Highlight text" },
-                        { step: "03", title: "Format", desc: "Pick a style" },
-                        { step: "04", title: "Paste", desc: "Copy and go" }
-                      ].map((s, i) => (
-                        <div key={i} className="flex flex-col gap-1">
-                          <h4 className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">{s.title}</h4>
-                          <p className="text-slate-500 text-[9px] font-bold leading-tight uppercase opacity-60">{s.desc}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </motion.section>
-             </div>
-
+          <div className="flex flex-col gap-10 lg:mt-0 overflow-visible">
             {/* Editor Section */}
-            <motion.div variants={itemVariants} className="w-full relative">
-              <div className="glass-card rounded-[2rem] overflow-hidden relative">
-                <div className="px-8 py-5 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
-                  <div className="flex items-center gap-2 text-xs font-bold tracking-widest text-slate-500 uppercase">
-                    <PenTool className="w-4 h-4" />
-                    <span>Editor Workspace</span>
-                  </div>
-                  <div className="flex items-center gap-6">
-                    <div className="flex items-center gap-2">
-                      <Languages className="w-4 h-4 text-indigo-400" />
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{detectedScript}</span>
-                    </div>
-                    <div className="h-4 w-px bg-white/10" />
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{inputText.length} Characters</span>
-                  </div>
-                </div>
+            <div className="w-full flex flex-col gap-6 sticky top-32 z-40 h-fit">
+              <EditorToolbar 
+                selectionMode={selectionMode}
+                setSelectionMode={setSelectionMode}
+                applyStyleToSelection={applyStyleToSelection}
+                historyCount={history.length}
+                handleUndo={handleUndo}
+                handleCopy={handleCopy}
+                inputTextLength={inputText.length}
+                detectedScript={detectedScript}
+                isCopied={isCopied}
+                showEmojiPicker={showEmojiPicker}
+                setShowEmojiPicker={setShowEmojiPicker}
+                emojiSearch={emojiSearch}
+                setEmojiSearch={setEmojiSearch}
+                filteredEmojis={filteredEmojis}
+                onEmojiInsert={(emoji) => {
+                  const textarea = textareaRef.current;
+                  if (textarea) {
+                    const start = textarea.selectionStart;
+                    const end = textarea.selectionEnd;
+                    const newText = inputText.substring(0, start) + emoji + inputText.substring(end);
+                    setInputText(newText);
+                    setTimeout(() => {
+                      textarea.focus();
+                      textarea.setSelectionRange(start + emoji.length, start + emoji.length);
+                      handleSelection();
+                    }, 0);
+                  }
+                  setShowEmojiPicker(false);
+                }}
+              />
 
-                {/* Formatting Toolbar — always visible, glows when text is selected */}
-                <div className={`border-b transition-all duration-300 ${hasSelection ? 'border-indigo-500/30 bg-indigo-500/[0.04] shadow-[inset_0_-1px_12px_rgba(99,102,241,0.15)]' : 'border-white/5 bg-white/[0.02]'}`}>
-                  <div className="flex flex-wrap items-center gap-1.5 px-6 py-4">
-                    {toolbarOptions.map((opt, idx) => (
-                      <button
-                        key={idx}
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={() => applyStyleToSelection(opt.func)}
-                        className={`group flex flex-col items-center gap-1.5 min-w-[3rem] py-2 rounded-xl transition-all duration-200 ${
-                          opt.isSpecial
-                            ? 'text-orange-400 hover:bg-orange-400/10'
-                            : 'text-slate-300 hover:bg-indigo-500/10 hover:text-white'
-                        }`}
-                        title={opt.label}
-                      >
-                        <div className="text-lg transition-transform group-hover:scale-110 duration-200">{opt.icon}</div>
-                        <span className={`text-[8px] uppercase font-black tracking-widest transition-colors duration-200 ${opt.isSpecial ? 'text-orange-400/60 group-hover:text-orange-400' : 'text-slate-500 group-hover:text-white'}`}>
-                          {opt.displayLabel}
-                        </span>
-                      </button>
-                    ))}
-
-                    <div className="w-px h-8 bg-white/10 mx-2" />
-
-                    <div className="relative">
-                      <button
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                        className="group flex flex-col items-center gap-1.5 min-w-[3rem] py-2 rounded-xl transition-all text-yellow-500 hover:bg-yellow-500/10"
-                        title="Emoji"
-                      >
-                        <div className="transition-transform group-hover:scale-110 duration-200">
-                          <Smile className="w-5 h-5" />
-                        </div>
-                        <span className="text-[8px] uppercase font-black tracking-widest text-yellow-500/60 group-hover:text-yellow-500">
-                          Emoji
-                        </span>
-                      </button>
-
-                      <AnimatePresence>
-                        {showEmojiPicker && (
-                          <motion.div
-                            initial={{ opacity: 0, y: -10, scale: 0.9 }}
-                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                            exit={{ opacity: 0, y: -10, scale: 0.9 }}
-                            className="absolute top-full mt-3 right-0 w-72 h-80 rounded-3xl glass-card z-50 flex flex-col overflow-hidden"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <div className="p-3 border-b border-white/5 flex items-center gap-3 bg-white/5">
-                              <Search className="w-4 h-4 text-slate-500" />
-                              <input
-                                type="text"
-                                placeholder="Search symbols..."
-                                className="w-full text-sm focus:outline-none bg-transparent premium-input"
-                                value={emojiSearch}
-                                onChange={(e) => setEmojiSearch(e.target.value)}
-                              />
-                            </div>
-                            <div className="flex-1 overflow-y-auto p-3 grid grid-cols-6 gap-1">
-                              {filteredEmojis.filter(e => emojiSearch === '' || e.includes(emojiSearch)).map(emoji => (
-                                <button
-                                  key={emoji}
-                                  onMouseDown={(e) => e.preventDefault()}
-                                  onClick={() => {
-                                    const textarea = textareaRef.current;
-                                    if (textarea) {
-                                      const start = textarea.selectionStart;
-                                      const end = textarea.selectionEnd;
-                                      const newText = inputText.substring(0, start) + emoji + inputText.substring(end);
-                                      setInputText(newText);
-                                      setTimeout(() => {
-                                        textarea.focus();
-                                        textarea.setSelectionRange(start + emoji.length, start + emoji.length);
-                                        handleSelection();
-                                      }, 0);
-                                    }
-                                    setShowEmojiPicker(false);
-                                  }}
-                                  className="text-xl p-2 hover:bg-indigo-500/20 rounded-lg transition-colors"
-                                >
-                                  {emoji}
-                                </button>
-                              ))}
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                  </div>
-                </div>
-
-                <textarea
-                  ref={textareaRef}
-                  value={inputText}
-                  onChange={(e) => {
-                    setInputText(e.target.value);
-                    handleSelection();
-                  }}
-                  onMouseUp={() => handleSelection()}
-                  onKeyUp={handleSelection}
-                  placeholder="Compose your message here..."
-                  dir="auto"
-                  spellCheck={false}
-                  className="w-full h-80 md:h-[400px] p-10 resize-none focus:outline-none text-2xl leading-relaxed premium-input passage-field"
-                />
-              </div>
-            </motion.div>
-
-            {/* Bottom Ad Space */}
-            <motion.div variants={itemVariants} className="w-full h-[120px] glass-card rounded-3xl border border-dashed border-white/10 flex flex-col items-center justify-center p-4 relative group">
-               <div className="absolute top-4 left-6 flex items-center gap-2">
-                 <div className="w-1.5 h-1.5 rounded-full bg-slate-700" />
-                 <span className="text-[8px] uppercase font-black tracking-widest text-slate-700">Advertisement Space</span>
-               </div>
-               <p className="text-slate-600 text-xs font-bold uppercase tracking-[0.2em] group-hover:text-indigo-500/40 transition-colors">
-                 Your Ad Placement Here
-               </p>
-            </motion.div>
-
-            {/* FAQ Section (AEO) Section (Relocated below editor) */}
-            <motion.section variants={itemVariants}>
-              <div className="text-center mb-12">
-                 <h2 className="text-2xl font-black text-white mb-4">Questions & Answers</h2>
-                 <p className="text-slate-600 font-bold text-[10px] uppercase tracking-widest italic">SocialFont.space Engine</p>
-              </div>
-              <div className="grid md:grid-cols-2 gap-6">
-                {[
-                  { q: "FB bold text?", a: "SocialFont uses Unicode characters compatible with Facebook posts/bios." },
-                  { q: "Insta fonts?", a: "Fully compatible with Instagram bios, captions, and comments." },
-                ].map((faq, i) => (
-                  <div key={i} className="glass-card p-6 rounded-3xl border-white/5">
-                    <h4 className="text-sm font-black mb-3 text-white flex gap-2">
-                       <span className="text-indigo-500">Q.</span> {faq.q}
-                    </h4>
-                    <p className="text-slate-400 text-xs leading-relaxed pl-5 border-l border-white/5">{faq.a}</p>
-                  </div>
-                ))}
-              </div>
-            </motion.section>
+              <TextWorkspace 
+                inputText={inputText}
+                setInputText={setInputText}
+                handleScroll={handleScroll}
+                handleSelection={handleSelection}
+                setIsDragging={setIsDragging}
+                isDragging={isDragging}
+                selectionMode={selectionMode}
+                savedSelections={savedSelections}
+                textareaRef={textareaRef}
+                backdropRef={backdropRef}
+                setSavedSelections={setSavedSelections}
+              />
+            </div>
           </div>
 
-          {/* Right Sidebar: Ad Space Skycraper */}
-          <motion.aside variants={itemVariants} className="hidden xl:block h-full">
-             <div className="glass-card rounded-[2rem] p-6 h-fit min-h-[500px] sticky top-32 flex flex-col items-center justify-center border-dashed border-white/10 relative group">
-                <div className="absolute top-4 px-4 py-1.5 rounded-full bg-slate-900 border border-white/5 flex items-center gap-2">
-                  <div className="w-1 h-1 rounded-full bg-slate-700" />
-                  <span className="text-[7px] uppercase font-black tracking-[0.2em] text-slate-500">Sponsored Section</span>
-                </div>
+          {/* Right Sidebar */}
+          <motion.aside variants={itemVariants} className="hidden xl:block sticky top-32 h-fit z-30 overflow-visible">
+            <div className="flex flex-col gap-6">
+              {/* How it works Mini */}
+              <div className="bg-white/[0.02] border border-white/5 rounded-3xl p-5 overflow-hidden relative group">
+                <div className="absolute top-0 right-1/4 w-64 h-64 bg-indigo-500/10 rounded-full blur-[100px] pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
                 
-                <div className="flex flex-col items-center gap-8 opacity-20 group-hover:opacity-40 transition-opacity">
-                  <Layout className="w-12 h-12 text-slate-500" />
-                  <div className="flex flex-col items-center gap-2">
-                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">Premium Ad Slot</p>
-                    <p className="text-[10px] font-bold text-slate-600">300 x 600 px</p>
+                <div className="flex flex-col gap-5 relative z-10">
+                  <div className="flex flex-col gap-1.5">
+                    <h2 className="text-[11px] font-black text-white uppercase tracking-widest">How It Works</h2>
+                    <p className="text-slate-500 text-[9px] font-bold uppercase tracking-wider">Four steps to premium formatting</p>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-2.5">
+                    {[
+                      { step: "01", title: "Write", desc: "Type message", icon: <Keyboard className="w-4 h-4" /> },
+                      { step: "02", title: "Select", desc: "Highlight text", icon: <MousePointer2 className="w-4 h-4" /> },
+                      { step: "03", title: "Style", desc: "Click preset", icon: <Wand2 className="w-4 h-4" /> },
+                      { step: "04", title: "Paste", desc: "Use anywhere", icon: <ClipboardType className="w-4 h-4" /> }
+                    ].map((s, i) => (
+                      <div key={i} className="glass-card bg-midnight/40 hover:bg-white/[0.04] border-white/5 hover:border-indigo-500/30 transition-all duration-500 p-3 rounded-xl flex flex-col gap-1.5 group/card cursor-default relative overflow-hidden">
+                        <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/0 to-indigo-500/5 opacity-0 group-hover/card:opacity-100 transition-opacity duration-500" />
+                        
+                        <div className="flex items-center gap-2 relative z-10">
+                          <div className="w-6 h-6 shrink-0 rounded-lg bg-white/[0.03] border border-white/10 flex items-center justify-center group-hover/card:scale-110 group-hover/card:border-indigo-500/50 group-hover/card:bg-indigo-500/10 text-slate-500 group-hover/card:text-indigo-400 transition-all duration-500">
+                             {React.cloneElement(s.icon as React.ReactElement, { className: 'w-2.5 h-2.5' })}
+                          </div>
+                          <h4 className="text-[10px] font-black text-white uppercase tracking-widest group-hover/card:text-indigo-300 transition-colors leading-none">{s.title}</h4>
+                          <span className="ml-auto text-[8px] font-black text-indigo-400/20 uppercase leading-none">{s.step}</span>
+                        </div>
+                        
+                        <div className="relative z-10 w-full">
+                          <p className="text-slate-500 text-[8px] font-medium leading-tight group-hover/card:text-slate-400 transition-colors">{s.desc}</p>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
+              </div>
 
-                <div className="absolute bottom-8 px-6 text-center">
-                   <p className="text-[8px] font-bold text-slate-700 leading-relaxed uppercase tracking-widest">
-                     Place your brand here to reach creators and designers.
-                   </p>
-                </div>
-             </div>
+              {/* Ad Space Skycraper */}
+              <div className="glass-card rounded-[2rem] h-fit min-h-[600px] border border-dashed border-white/10 flex flex-col items-center justify-center relative overflow-hidden">
+                 <div className="absolute top-4 left-4 z-10 px-2 py-0.5 rounded bg-slate-900/80 border border-white/5 opacity-50">
+                    <span className="text-[5px] uppercase font-black tracking-widest text-slate-500">Sponsored</span>
+                 </div>
+                 <GoogleAd slot="0987654321" className="w-full h-full min-h-[600px]" format="vertical" />
+              </div>
+            </div>
           </motion.aside>
         </motion.div>
+
+        {/* Post-Passage Content Area (Relocated from grid to allow clean scroll) */}
+        <div className="max-w-7xl mx-auto px-6 mt-20 space-y-20">
+          {/* Bottom Ad Space */}
+          <motion.div variants={itemVariants} className="w-full h-[100px] glass-card rounded-3xl border border-dashed border-white/10 flex flex-col items-center justify-center relative overflow-hidden">
+             <div className="absolute top-2 left-4 z-10 px-2 py-0.5 rounded bg-slate-900/80 border border-white/5 opacity-50">
+                <span className="text-[5px] uppercase font-black tracking-widest text-slate-500">Sponsored</span>
+             </div>
+             <GoogleAd slot="1122334455" className="w-full h-full min-h-[100px]" format="horizontal" />
+          </motion.div>
+
+          {/* FAQ Section (AEO) */}
+          <motion.section variants={itemVariants} className="relative">
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-3/4 bg-indigo-500/5 rounded-full blur-[120px] pointer-events-none" />
+            
+            <div className="text-center mb-16 relative z-10">
+               <h2 className="text-3xl font-black text-white mb-4">Frequently Asked <span className="text-indigo-400">Questions</span></h2>
+               <div className="flex items-center justify-center gap-4">
+                 <div className="h-px w-10 bg-white/10" />
+                 <p className="text-slate-600 font-bold text-[10px] uppercase tracking-[0.3em] font-display">SocialFont Engine Expertise</p>
+                 <div className="h-px w-10 bg-white/10" />
+               </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 relative z-10">
+              {[
+                { q: "FB bold text?", a: "SocialFont uses Unicode characters compatible with Facebook posts/bios." },
+                { q: "Insta fonts?", a: "Fully compatible with Instagram bios, captions, and comments." },
+                { q: "Is it safe?", a: "Yes, we use standard Unicode characters that don't violate social media policies." },
+                { q: "Work on TikTok?", a: "Absolutely! Our styles work on TikTok, LinkedIn, WhatsApp, and more." },
+                { q: "Need any app?", a: "No app or extension needed. Everything works 100% in your browser." },
+                { q: "How to copy?", a: "Just select your text and use the standard copy command to paste it anywhere." },
+                { q: "Work in Bios?", a: "Yes, these are optimized to make your Instagram/FB bios look premium." },
+                { q: "Hidden costs?", a: "SocialFont is 100% free to use for both personal and professional profiles." },
+                { q: "Unicode support?", a: "We support wide, bubble, script, fraktur, and 20+ other Unicode styles." },
+              ].map((faq, i) => (
+                <div key={i} className="glass-card p-6 rounded-3xl border-white/5 hover:border-indigo-500/30 transition-colors group">
+                  <h4 className="text-sm font-black mb-3 text-white flex gap-2 group-hover:text-indigo-300 transition-colors">
+                     <span className="text-indigo-500">Q.</span> {faq.q}
+                  </h4>
+                  <p className="text-slate-400 text-xs leading-relaxed pl-5 border-l border-white/5 group-hover:border-indigo-500/50 transition-colors">{faq.a}</p>
+                </div>
+              ))}
+            </div>
+          </motion.section>
+        </div>
       </main>
 
       {/* Footer */}
-      <footer className="mt-20 py-16 border-t border-white/5 text-center">
-        <div className="flex justify-center gap-8 mb-6 opacity-40">
-           <Share2 className="w-5 h-5" />
-           <Sparkles className="w-5 h-5" />
-           <Hash className="w-5 h-5" />
+      <footer className="mt-20 py-24 border-t border-white/5 bg-gradient-to-b from-transparent to-black/40">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-8">
+            
+            {/* Pillar 1: Identity */}
+            <div className="flex flex-col space-y-6">
+              <div className="flex items-center gap-3">
+                <Logo className="w-8 h-8 opacity-80" />
+                <span className="text-lg font-black tracking-tight text-white">SocialFont</span>
+              </div>
+              <div className="space-y-2">
+                <p className="text-[10px] font-bold text-slate-500 tracking-widest leading-relaxed">
+                  {siteSettings?.footer_credits?.tagline1 || "SocialFont Engine • Engineered for Quality"}
+                </p>
+                <p className="text-[8px] uppercase font-black tracking-[0.4em] text-slate-600 opacity-60 leading-relaxed">
+                  {siteSettings?.footer_credits?.tagline2 || "Pure Unicode • No External Fonts Required"}
+                </p>
+              </div>
+              <div className="pt-4">
+                <a 
+                  href={siteSettings?.footer_settings?.orbitUrl || 'https://orbitsaas.cloud'} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-[9px] font-black uppercase tracking-[0.2em] text-indigo-400 group flex items-center gap-2 hover:text-indigo-300 transition-colors"
+                >
+                  {siteSettings?.footer_credits?.copyright || "© 2026 OrbitSaaS. All rights reserved."}
+                  <ExternalLink className="w-2.5 h-2.5 opacity-40 group-hover:opacity-100 transition-opacity" />
+                </a>
+              </div>
+            </div>
+
+            {/* Pillar 2: Platform */}
+            <div className="flex flex-col space-y-6">
+              <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Platform</h4>
+              <div className="flex flex-col gap-4">
+                {[
+                  { label: 'About SocialFont', path: '#' },
+                  { label: 'Frequently Asked', path: '#' },
+                  { label: 'Tool Roadmap', path: '#' },
+                  { label: 'Unicode Guide', path: '#' }
+                ].map(link => (
+                  <Link 
+                    key={link.label} 
+                    to={link.path} 
+                    className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 hover:text-white transition-all duration-300"
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            {/* Pillar 3: Support */}
+            <div className="flex flex-col space-y-6">
+              <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Support</h4>
+              <div className="flex flex-col gap-4">
+                {[
+                  { label: 'Privacy Policy', path: '/privacy' },
+                  { label: 'Terms of Service', path: '/terms' },
+                  { label: 'Contact Support', path: '/contact' }
+                ].map(link => (
+                  <Link 
+                    key={link.label} 
+                    to={link.path} 
+                    className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 hover:text-white transition-all duration-300"
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            {/* Pillar 4: Community & Newsletter */}
+            <div className="flex flex-col space-y-8">
+              <div className="space-y-4">
+                <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Stay Magic</h4>
+                <div className="relative group max-w-[240px]">
+                  <input 
+                    type="email" 
+                    placeholder="Email Address" 
+                    className="w-full bg-white/[0.03] border border-white/5 rounded-xl px-4 py-3 text-[10px] font-bold text-white outline-none focus:border-indigo-500/50 transition-all placeholder-slate-600"
+                  />
+                  <button className="absolute right-2 top-1.5 bottom-1.5 px-3 rounded-lg bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500 hover:text-white transition-all duration-300">
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-4 pt-2">
+                <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Connect</h4>
+                <div className="flex items-center gap-6">
+                  {[
+                    { id: 'facebook', icon: <Facebook />, color: '#1877F2', url: siteSettings?.footer_settings?.facebookUrl },
+                    { id: 'instagram', icon: <Instagram />, color: '#E4405F', url: siteSettings?.footer_settings?.instagramUrl },
+                    { id: 'whatsapp', icon: <WhatsAppIcon />, color: '#25D366', url: siteSettings?.footer_settings?.whatsappUrl ? `https://wa.me/${siteSettings.footer_settings.whatsappUrl.replace(/\D/g, '')}` : null }
+                  ].map(social => (
+                    <a 
+                      key={social.id}
+                      href={social.url || '#'}
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className={`transition-all duration-300 hover:-translate-y-1 transform hover:scale-110 ${social.url ? 'text-slate-500 hover:text-white' : 'text-slate-700 pointer-events-none'}`}
+                      style={{ color: social.url ? undefined : social.color }}
+                      onMouseEnter={(e) => { if(social.url) e.currentTarget.style.color = social.color }}
+                      onMouseLeave={(e) => { if(social.url) e.currentTarget.style.color = '' }}
+                      title={social.id}
+                    >
+                      {React.cloneElement(social.icon as React.ReactElement, { className: 'w-4 h-4' })}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+          </div>
         </div>
-        <p className="text-sm font-bold text-slate-500 tracking-wide">SocialFont.space Engine • Engineered for Quality</p>
-        <p className="text-[10px] uppercase font-black tracking-[0.3em] mt-3 text-slate-600">Pure Unicode • No External Fonts Required</p>
       </footer>
 
       {/* Premium Login / Email Popup */}
@@ -636,12 +876,59 @@ function MainApp() {
   );
 }
 
+import { PrivacyPolicy, TermsOfService, Contact } from './LegalPages';
+
 export default function App() {
+  const [heroFeatures, setHeroFeatures] = useState([
+    { icon: 'Zap', title: 'Instant Format', desc: '20+ Cinematic Unicode styles.' },
+    { icon: 'Languages', title: 'Global Support', desc: 'Bengali, Arabic & Cyrillic fallback.' },
+    { icon: 'Check', title: 'Copy & Deploy', desc: 'Works on FB, IG, X & Threads.' }
+  ]);
+  const [partnerBanner, setPartnerBanner] = useState({
+    enabled: true,
+    url: 'https://orbitsaas.cloud',
+    title: 'OrbitSaaS.cloud',
+    desc: 'Scaling next-gen software solutions. Turn your ideas into powerful cloud applications.',
+    badge: 'Partner',
+    cta: 'Explore Services'
+  });
+  const [footerSettings, setFooterSettings] = useState({
+    orbitUrl: 'https://orbitsaas.cloud',
+    facebookUrl: '',
+    instagramUrl: '',
+    whatsappUrl: ''
+  });
+  const [siteSettings, setSiteSettings] = useState<any>(null);
+
+  useEffect(() => {
+    fetch('/api/settings')
+      .then(res => res.json())
+      .then(data => {
+        if (data) {
+          setSiteSettings(data);
+          if (data.hero_features) setHeroFeatures(data.hero_features);
+          if (data.partner_banner) setPartnerBanner(data.partner_banner);
+          if (data.footer_settings) setFooterSettings(data.footer_settings);
+        }
+      })
+      .catch(console.error);
+  }, []);
+
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<MainApp />} />
+        <Route path="/" element={
+          <MainApp 
+            siteSettings={siteSettings} 
+            heroFeatures={heroFeatures} 
+            partnerBanner={partnerBanner}
+            footerSettings={footerSettings}
+          />
+        } />
         <Route path="/adm" element={<AdminPanel />} />
+        <Route path="/privacy" element={<PrivacyPolicy content={siteSettings?.privacy_content} />} />
+        <Route path="/terms" element={<TermsOfService content={siteSettings?.terms_content} />} />
+        <Route path="/contact" element={<Contact content={siteSettings?.contact_content} />} />
       </Routes>
     </BrowserRouter>
   );

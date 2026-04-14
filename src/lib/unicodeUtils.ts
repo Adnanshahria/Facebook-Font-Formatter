@@ -133,9 +133,23 @@ export function toFacebookItalic(text: string): string {
 export function toFacebookStrikethrough(text: string): string {
   const script = detectScript(text);
   if (script === 'Latin') {
-    return applyCombiningStyle(text, '\u0336');
+    return applyCombiningStyle(text, '\u0336'); // Long stroke (Connected but low on Windows)
   }
   return '꧁̶' + text + '̶꧂';
+}
+
+export function toSlashStrike(text: string): string {
+  if (!text.includes(' ')) {
+    return `/${text}/`;
+  }
+  return text.split(' ').join(' / ');
+}
+
+export function toWaveStrike(text: string): string {
+  if (!text.includes(' ')) {
+    return `~${text}~`;
+  }
+  return text.split(' ').join(' ~ ');
 }
 
 export function toFacebookUnderline(text: string): string {
