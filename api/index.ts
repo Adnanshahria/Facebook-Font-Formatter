@@ -153,6 +153,106 @@ app.post('/api/content', async (req, res) => {
   }
 });
 
+const AI_PROMPTS = {
+  enhance: "Rewrite the following text to improve engagement, emotional impact, and reach. Make the vocabulary more compelling. Only output the final enhanced text, no conversational filler or intro text.",
+  compact: "Summarize and compact the following text into a punchy, shorter version. Maintain the core message. Only output the final text, no conversational filler.",
+  highlight: `Identify the most impactful keywords in the following text and style them using special bracket tags.
+Available tags:
+[bold]...[/bold], [italic]...[/italic], [underline]...[/underline], [strikethrough]...[/strikethrough], [monospace]...[/monospace], [script]...[/script], [double]...[/double], [fraktur]...[/fraktur], [bubble]...[/bubble], [square]...[/square]
+
+You can mix different styles for different important words. For example: "This is absolutely [bold]incredible[/bold] and [italic]beautiful[/italic]."
+Do NOT change the original words or restructure the sentence. ONLY add the bracket tags around important words. Keep the rest of the text exactly the same. No conversational filler.`
+};
+
+app.post('/api/ai', async (req, res) => {
+  const { mode, text } = req.body;
+  if (!mode || !text) return res.status(400).json({ error: 'Missing mode or text' });
+
+  const hfKey = process.env.HF_API_TOKEN;
+  const groqKey = process.env.GROQ_API_KEY;
+
+  if (!hfKey && !groqKey) {
+    return res.status(400).json({ error: 'AI Integrations are missing ENV Secrets (HF_API_TOKEN or GROQ_API_KEY).' });
+  }
+
+  const systemPrompt = AI_PROMPTS[mode as keyof typeof AI_PROMPTS] || AI_PROMPTS.enhance;
+  let finalResult = "";
+  let hfError = null;
+
+  // 1. Try HuggingFace (Primary)
+  if (hfKey) {
+    console.log(`[AI] Attempting HuggingFace request for mode: ${mode}`);
+    try {
+      const hfResponse = await fetch('https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.3/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${hfKey}`
+        },
+        body: JSON.stringify({
+          model: "mistralai/Mistral-7B-Instruct-v0.3",
+          messages: [
+            { role: 'system', content: 'You are an expert copywriter. Output strictly only the final requested text block. No markdown code blocks, no conversational prefixes.' },
+            { role: 'user', content: `${systemPrompt}\n\nHere is the text:\n${text}` }
+          ],
+          max_tokens: 500
+        })
+      });
+
+      if (hfResponse.ok) {
+        const aiData: any = await hfResponse.json();
+        finalResult = aiData?.choices?.[0]?.message?.content?.trim() || "";
+        console.log(`[AI] HuggingFace success`);
+      } else {
+        hfError = await hfResponse.text();
+        console.error(`[AI] HuggingFace Error (${hfResponse.status}):`, hfError);
+      }
+    } catch (err) {
+      hfError = String(err);
+      console.error(`[AI] HuggingFace Fetch Exception:`, hfError);
+    }
+  }
+
+  // 2. Fallback to Groq
+  if (!finalResult && groqKey) {
+    console.log(`[AI] Attempting Groq fallback for mode: ${mode}`);
+    try {
+      const groqResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${groqKey}`
+        },
+        body: JSON.stringify({
+          model: "llama3-8b-8192",
+          messages: [
+            { role: 'system', content: 'You are an expert copywriter. Output strictly only the final requested text block. No markdown code blocks, no intro text.' },
+            { role: 'user', content: `${systemPrompt}\n\nHere is the text:\n${text}` }
+          ]
+        })
+      });
+
+      if (groqResponse.ok) {
+        const aiData: any = await groqResponse.json();
+        finalResult = aiData?.choices?.[0]?.message?.content?.trim() || "";
+        console.log(`[AI] Groq success`);
+      } else {
+        const errText = await groqResponse.text();
+        console.error(`[AI] Groq Error (${groqResponse.status}):`, errText);
+      }
+    } catch (err) {
+      console.error("[AI] Groq fallback error:", err);
+    }
+  }
+
+  if (!finalResult) {
+    return res.status(500).json({ error: `AI generation failed. ${hfError ? 'HF Error: ' + hfError : ''}` });
+  }
+
+  res.json({ result: finalResult });
+});
+
+
 app.post('/api/admin/data', async (req, res) => {
   const { password } = req.body;
   const adminPassword = process.env.VITE_ADMIN_PASSWORD || 'admin123';

@@ -5,6 +5,8 @@ export interface Env {
   TURSO_AUTH_TOKEN: string;
   VITE_ADMIN_PASSWORD?: string;
   APP_URL?: string;
+  HF_API_TOKEN?: string;
+  GROQ_API_KEY?: string;
 }
 
 export function getDb(env: Env) {

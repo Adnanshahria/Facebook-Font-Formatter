@@ -63,3 +63,27 @@ export const Contact = ({ content }: { content?: string }) => (
     <ContentRenderer content={content || ""} />
   </PageLayout>
 );
+
+export const AboutPage = ({ content }: { content?: string }) => (
+  <PageLayout title="About SocialFont" icon={FileText}>
+    <ContentRenderer content={content || "### Our Mission\n\nSocialFont is dedicated to providing the best Unicode formatting tool for social media platforms. We believe in empowering communication with premium tools."} />
+  </PageLayout>
+);
+
+export const FAQPage = ({ content }: { content?: string }) => (
+  <PageLayout title="Frequently Asked Questions" icon={FileText}>
+    <ContentRenderer content={content || "### How does it work?\n\nSimply type your text, select it, and choose a style from our advanced text formatter engine."} />
+  </PageLayout>
+);
+
+export const RoadmapPage = ({ content }: { content?: string }) => (
+  <PageLayout title="Tool Roadmap" icon={FileText}>
+    <ContentRenderer content={content || "### Upcoming Features\n\n- Expanding the font library by 30+ new styles.\n- Advanced text prediction.\n- More integrations."} />
+  </PageLayout>
+);
+
+export const GuidePage = ({ content }: { content?: string }) => (
+  <PageLayout title="Unicode Guide" icon={FileText}>
+    <ContentRenderer content={content || "### What is Unicode?\n\nUnicode is an information technology standard for the consistent encoding, representation, and handling of text expressed in most of the world's writing systems. Using our tool, you seamlessly convert plain text to rich Unicode characters playable everywhere!"} />
+  </PageLayout>
+);

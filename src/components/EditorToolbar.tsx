@@ -15,7 +15,11 @@ import {
   Copy,
   Languages,
   Smile,
-  Check
+  Check,
+  Wand2,
+  Minimize2,
+  Highlighter,
+  Loader2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import * as unicode from '../lib/unicodeUtils';
@@ -62,6 +66,8 @@ interface EditorToolbarProps {
   setEmojiSearch: (search: string) => void;
   filteredEmojis: string[];
   onEmojiInsert: (emoji: string) => void;
+  handleAiAction: (mode: 'enhance' | 'compact' | 'highlight') => void;
+  isAiLoading: boolean;
 }
 
 export default function EditorToolbar({
@@ -79,7 +85,9 @@ export default function EditorToolbar({
   emojiSearch,
   setEmojiSearch,
   filteredEmojis,
-  onEmojiInsert
+  onEmojiInsert,
+  handleAiAction,
+  isAiLoading
 }: EditorToolbarProps) {
   return (
     <motion.div variants={itemVariants}>
@@ -236,6 +244,55 @@ export default function EditorToolbar({
                   </motion.div>
                 )}
               </AnimatePresence>
+            </div>
+
+            <div className="w-px h-8 bg-white/10 mx-2" />
+
+            <div className="flex items-center gap-1.5 ml-auto">
+              <button
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => handleAiAction('enhance')}
+                disabled={isAiLoading}
+                className="group flex flex-col items-center gap-1 min-w-[3.5rem] py-1 rounded-xl transition-all text-purple-400 hover:bg-purple-500/10 disabled:opacity-50"
+                title="Enhance with AI"
+              >
+                <div className="transition-transform group-hover:scale-110 duration-200">
+                  {isAiLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Wand2 className="w-5 h-5" />}
+                </div>
+                <span className="text-[8px] uppercase font-black tracking-widest text-purple-400/60 group-hover:text-purple-400">
+                  Enhance
+                </span>
+              </button>
+
+              <button
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => handleAiAction('compact')}
+                disabled={isAiLoading}
+                className="group flex flex-col items-center gap-1 min-w-[3.5rem] py-1 rounded-xl transition-all text-cyan-400 hover:bg-cyan-500/10 disabled:opacity-50"
+                title="Compact with AI"
+              >
+                <div className="transition-transform group-hover:scale-110 duration-200">
+                  {isAiLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Minimize2 className="w-5 h-5" />}
+                </div>
+                <span className="text-[8px] uppercase font-black tracking-widest text-cyan-400/60 group-hover:text-cyan-400">
+                  Compact
+                </span>
+              </button>
+
+              <button
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => handleAiAction('highlight')}
+                disabled={isAiLoading}
+                className="group flex flex-col items-center gap-1 min-w-[3.5rem] py-1 rounded-xl transition-all text-amber-400 hover:bg-amber-500/10 disabled:opacity-50"
+                title="Highlight with AI"
+              >
+                <div className="transition-transform group-hover:scale-110 duration-200">
+                  {isAiLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Highlighter className="w-5 h-5" />}
+                </div>
+                <span className="text-[8px] uppercase font-black tracking-widest text-amber-400/60 group-hover:text-amber-400">
+                  Highlight
+                </span>
+              </button>
             </div>
           </div>
         </div>

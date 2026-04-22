@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Users, FileText, Lock, Search, Filter, ArrowLeft, TrendingUp, Calendar, Trash2, Mail, ExternalLink, Clock, Settings, Save, ShieldCheck } from 'lucide-react';
+import { Users, FileText, Lock, Search, Filter, ArrowLeft, TrendingUp, Calendar, Trash2, Mail, ExternalLink, Clock, Settings, Save, ShieldCheck, Wand2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
 import Logo from './Logo';
@@ -36,7 +36,10 @@ export default function AdminPanel() {
     orbitUrl: 'https://orbitsaas.cloud',
     facebookUrl: '',
     instagramUrl: '',
-    whatsappUrl: ''
+    whatsappUrl: '',
+    facebookEnabled: true,
+    instagramEnabled: true,
+    whatsappEnabled: true
   });
   const [footerCredits, setFooterCredits] = useState({
     copyright: "© 2026 OrbitSaaS. All rights reserved.",
@@ -276,17 +279,26 @@ export default function AdminPanel() {
               <ExternalLink className="w-5 h-5 text-indigo-400" />
               Partner Banner Configuration
             </h2>
-            <div className="flex items-center gap-3">
-              <span className="text-[10px] uppercase font-black tracking-widest text-slate-400">Enable</span>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input 
-                  type="checkbox" 
-                  className="sr-only peer" 
-                  checked={partnerBanner.enabled}
-                  onChange={(e) => setPartnerBanner({ ...partnerBanner, enabled: e.target.checked })}
-                />
-                <div className="w-9 h-5 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-500"></div>
-              </label>
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-3">
+                <span className="text-[10px] uppercase font-black tracking-widest text-slate-400">Enable</span>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    className="sr-only peer" 
+                    checked={partnerBanner.enabled}
+                    onChange={(e) => setPartnerBanner({ ...partnerBanner, enabled: e.target.checked })}
+                  />
+                  <div className="w-9 h-5 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-500"></div>
+                </label>
+              </div>
+              <button 
+                onClick={handleSaveSettings} 
+                disabled={savingSettings}
+                className="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 rounded-xl text-xs font-bold transition-colors flex items-center gap-2"
+              >
+                {savingSettings ? "Saving..." : <><Save className="w-4 h-4" /> Save Settings</>}
+              </button>
             </div>
           </div>
           <div className={`transition-all duration-300 ${partnerBanner.enabled ? 'opacity-100' : 'opacity-40 pointer-events-none'}`}>
@@ -322,6 +334,13 @@ export default function AdminPanel() {
               <Mail className="w-5 h-5 text-indigo-400" />
               Footer & Social Connectivity
             </h2>
+            <button 
+              onClick={handleSaveSettings} 
+              disabled={savingSettings}
+              className="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 rounded-xl text-xs font-bold transition-colors flex items-center gap-2"
+            >
+              {savingSettings ? "Saving..." : <><Save className="w-4 h-4" /> Save Settings</>}
+            </button>
           </div>
           <div className="p-8 grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="flex flex-col gap-1.5">
@@ -329,15 +348,24 @@ export default function AdminPanel() {
               <input type="text" value={footerSettings.orbitUrl} onChange={e => setFooterSettings({ ...footerSettings, orbitUrl: e.target.value })} className="bg-white/5 p-2 rounded-lg text-sm outline-none w-full border border-white/5 focus:border-indigo-500/50" />
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] text-slate-400 uppercase font-black tracking-widest">Facebook Profile</label>
+              <div className="flex items-center justify-between">
+                <label className="text-[10px] text-slate-400 uppercase font-black tracking-widest">Facebook Profile</label>
+                <input type="checkbox" checked={footerSettings.facebookEnabled ?? true} onChange={e => setFooterSettings({...footerSettings, facebookEnabled: e.target.checked})} />
+              </div>
               <input type="text" value={footerSettings.facebookUrl} onChange={e => setFooterSettings({ ...footerSettings, facebookUrl: e.target.value })} className="bg-white/5 p-2 rounded-lg text-sm outline-none w-full border border-white/5 focus:border-indigo-500/50" />
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] text-slate-400 uppercase font-black tracking-widest">Instagram Handle</label>
+              <div className="flex items-center justify-between">
+                <label className="text-[10px] text-slate-400 uppercase font-black tracking-widest">Instagram Handle</label>
+                <input type="checkbox" checked={footerSettings.instagramEnabled ?? true} onChange={e => setFooterSettings({...footerSettings, instagramEnabled: e.target.checked})} />
+              </div>
               <input type="text" value={footerSettings.instagramUrl} onChange={e => setFooterSettings({ ...footerSettings, instagramUrl: e.target.value })} className="bg-white/5 p-2 rounded-lg text-sm outline-none w-full border border-white/5 focus:border-indigo-500/50" />
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] text-slate-400 uppercase font-black tracking-widest">WhatsApp Contact</label>
+              <div className="flex items-center justify-between">
+                <label className="text-[10px] text-slate-400 uppercase font-black tracking-widest">WhatsApp Contact</label>
+                <input type="checkbox" checked={footerSettings.whatsappEnabled ?? true} onChange={e => setFooterSettings({...footerSettings, whatsappEnabled: e.target.checked})} />
+              </div>
               <input type="text" value={footerSettings.whatsappUrl} onChange={e => setFooterSettings({ ...footerSettings, whatsappUrl: e.target.value })} className="bg-white/5 p-2 rounded-lg text-sm outline-none w-full border border-white/5 focus:border-indigo-500/50" />
             </div>
           </div>
@@ -365,6 +393,13 @@ export default function AdminPanel() {
               <ShieldCheck className="w-5 h-5 text-indigo-400" />
               Legal Document Configuration
             </h2>
+            <button 
+              onClick={handleSaveSettings} 
+              disabled={savingSettings}
+              className="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 rounded-xl text-xs font-bold transition-colors flex items-center gap-2"
+            >
+              {savingSettings ? "Saving..." : <><Save className="w-4 h-4" /> Save Settings</>}
+            </button>
           </div>
           <div className="p-8 grid md:grid-cols-3 gap-8">
             <div className="flex flex-col gap-3">

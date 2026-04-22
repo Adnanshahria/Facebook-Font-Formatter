@@ -318,12 +318,14 @@ export function normalizeText(text: string): string {
 
   specialMaps.forEach(map => {
     Object.entries(map).forEach(([normal, styled]) => {
+      if (styled.length === 1 && styled.charCodeAt(0) < 128) return;
       reverseMap[styled] = normal;
     });
   });
 
   Object.values(MAPS).forEach(map => {
     Object.entries(map).forEach(([normal, styled]) => {
+      if (styled.length === 1 && styled.charCodeAt(0) < 128) return;
       reverseMap[styled] = normal;
     });
   });
@@ -334,4 +336,28 @@ export function normalizeText(text: string): string {
 
 export function clearFormatting(text: string): string {
   return normalizeText(text);
+}
+
+export function parseAndApplyMarkdownStyling(text: string): string {
+  let parsed = text;
+  
+  const tagMap: Record<string, (t: string) => string> = {
+    bold: toFacebookBold,
+    italic: toFacebookItalic,
+    underline: toFacebookUnderline,
+    strikethrough: toFacebookStrikethrough,
+    monospace: toFacebookMonospace,
+    script: toFacebookScript,
+    double: toFacebookDoubleStruck,
+    fraktur: toFacebookFraktur,
+    bubble: toFacebookBubble,
+    square: toFacebookSquare
+  };
+
+  for (const [tag, func] of Object.entries(tagMap)) {
+    const regex = new RegExp(`\\[${tag}\\](.*?)\\[\\/${tag}\\]`, 'g');
+    parsed = parsed.replace(regex, (_, p1) => func(p1));
+  }
+
+  return parsed;
 }

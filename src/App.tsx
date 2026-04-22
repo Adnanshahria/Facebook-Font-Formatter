@@ -65,12 +65,17 @@ const WhatsAppIcon = ({ className }: { className?: string }) => (
 );
 
 const GoogleAd = ({ className, slot, format = 'auto', responsive = 'true' }: { className?: string, slot: string, format?: string, responsive?: string }) => {
+  const adRef = useRef<boolean>(false);
+
   useEffect(() => {
-    try {
-      // @ts-ignore
-      (window.adsbygoogle = window.adsbygoogle || []).push({});
-    } catch (err) {
-      console.error(err);
+    // Only push if we haven't already and the window object exists
+    if (!adRef.current && typeof window !== 'undefined' && (window as any).adsbygoogle) {
+      try {
+        (window as any).adsbygoogle.push({});
+        adRef.current = true;
+      } catch (err) {
+        console.error('AdSense push error:', err);
+      }
     }
   }, []);
 
@@ -110,6 +115,7 @@ function MainApp({
   const [history, setHistory] = useState<string[]>([]);
   const [redoStack, setRedoStack] = useState<string[]>([]);
   const [showEmailPopup, setShowEmailPopup] = useState(false);
+  const [isAiLoading, setIsAiLoading] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const backdropRef = useRef<HTMLDivElement>(null);
   const handleScroll = (e: React.UIEvent<HTMLTextAreaElement>) => {
@@ -137,6 +143,35 @@ function MainApp({
     setRedoStack(prev => [inputText, ...prev]);
     setInputText(previous);
     setHistory(prev => prev.slice(0, -1));
+  };
+
+  const handleAiAction = async (mode: 'enhance' | 'compact' | 'highlight') => {
+    if (!inputText.trim()) return;
+    setIsAiLoading(true);
+    saveToHistory(inputText);
+    try {
+      const resp = await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode, text: inputText })
+      });
+      const data = await resp.json();
+      if (!resp.ok) {
+        alert(data.error || 'AI request failed');
+        // revert history since it failed
+        handleUndo();
+      } else if (data.result) {
+        let finalOutput = data.result;
+        if (mode === 'highlight') {
+          finalOutput = unicode.parseAndApplyMarkdownStyling(finalOutput);
+        }
+        setInputText(finalOutput);
+      }
+    } catch (err) {
+      alert('Error connecting to AI service.');
+      handleUndo();
+    }
+    setIsAiLoading(false);
   };
 
   // Visitor Tracking
@@ -481,7 +516,7 @@ function MainApp({
                <div className="absolute top-4 left-4 z-10 px-2 py-0.5 rounded bg-slate-900/80 border border-white/5 opacity-50">
                   <span className="text-[5px] uppercase font-black tracking-widest text-slate-500">Sponsored</span>
                </div>
-               <GoogleAd slot="1234567890" className="w-full h-full min-h-[250px]" format="rectangle" />
+               <GoogleAd slot="1479951864" className="w-full h-full min-h-[250px]" format="auto" />
             </div>
 
             {/* OrbitSaaS Special Banner */}
@@ -559,6 +594,8 @@ function MainApp({
                   }
                   setShowEmojiPicker(false);
                 }}
+                handleAiAction={handleAiAction}
+                isAiLoading={isAiLoading}
               />
 
               <TextWorkspace 
@@ -622,7 +659,7 @@ function MainApp({
                  <div className="absolute top-4 left-4 z-10 px-2 py-0.5 rounded bg-slate-900/80 border border-white/5 opacity-50">
                     <span className="text-[5px] uppercase font-black tracking-widest text-slate-500">Sponsored</span>
                  </div>
-                 <GoogleAd slot="0987654321" className="w-full h-full min-h-[600px]" format="vertical" />
+                 <GoogleAd slot="3288999191" className="w-full h-full min-h-[600px]" format="auto" />
               </div>
             </div>
           </motion.aside>
@@ -635,7 +672,7 @@ function MainApp({
              <div className="absolute top-2 left-4 z-10 px-2 py-0.5 rounded bg-slate-900/80 border border-white/5 opacity-50">
                 <span className="text-[5px] uppercase font-black tracking-widest text-slate-500">Sponsored</span>
              </div>
-             <GoogleAd slot="1122334455" className="w-full h-full min-h-[100px]" format="horizontal" />
+             <GoogleAd slot="2082587093" className="w-full h-full min-h-[100px]" format="auto" />
           </motion.div>
 
           {/* FAQ Section (AEO) */}
@@ -712,10 +749,10 @@ function MainApp({
               <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Platform</h4>
               <div className="flex flex-col gap-4">
                 {[
-                  { label: 'About SocialFont', path: '#' },
-                  { label: 'Frequently Asked', path: '#' },
-                  { label: 'Tool Roadmap', path: '#' },
-                  { label: 'Unicode Guide', path: '#' }
+                  { label: 'About SocialFont', path: '/about' },
+                  { label: 'Frequently Asked', path: '/faq' },
+                  { label: 'Tool Roadmap', path: '/roadmap' },
+                  { label: 'Unicode Guide', path: '/guide' }
                 ].map(link => (
                   <Link 
                     key={link.label} 
@@ -768,10 +805,10 @@ function MainApp({
                 <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Connect</h4>
                 <div className="flex items-center gap-6">
                   {[
-                    { id: 'facebook', icon: <Facebook />, color: '#1877F2', url: siteSettings?.footer_settings?.facebookUrl },
-                    { id: 'instagram', icon: <Instagram />, color: '#E4405F', url: siteSettings?.footer_settings?.instagramUrl },
-                    { id: 'whatsapp', icon: <WhatsAppIcon />, color: '#25D366', url: siteSettings?.footer_settings?.whatsappUrl ? `https://wa.me/${siteSettings.footer_settings.whatsappUrl.replace(/\D/g, '')}` : null }
-                  ].map(social => (
+                    { id: 'facebook', icon: <Facebook />, color: '#1877F2', url: siteSettings?.footer_settings?.facebookUrl, enabled: siteSettings?.footer_settings?.facebookEnabled ?? true },
+                    { id: 'instagram', icon: <Instagram />, color: '#E4405F', url: siteSettings?.footer_settings?.instagramUrl, enabled: siteSettings?.footer_settings?.instagramEnabled ?? true },
+                    { id: 'whatsapp', icon: <WhatsAppIcon />, color: '#25D366', url: siteSettings?.footer_settings?.whatsappUrl ? `https://wa.me/${siteSettings.footer_settings.whatsappUrl.replace(/\D/g, '')}` : null, enabled: siteSettings?.footer_settings?.whatsappEnabled ?? true }
+                  ].filter(social => social.enabled !== false).map(social => (
                     <a 
                       key={social.id}
                       href={social.url || '#'}
@@ -876,7 +913,7 @@ function MainApp({
   );
 }
 
-import { PrivacyPolicy, TermsOfService, Contact } from './LegalPages';
+import { PrivacyPolicy, TermsOfService, Contact, AboutPage, FAQPage, RoadmapPage, GuidePage } from './LegalPages';
 
 export default function App() {
   const [heroFeatures, setHeroFeatures] = useState([
@@ -929,6 +966,10 @@ export default function App() {
         <Route path="/privacy" element={<PrivacyPolicy content={siteSettings?.privacy_content} />} />
         <Route path="/terms" element={<TermsOfService content={siteSettings?.terms_content} />} />
         <Route path="/contact" element={<Contact content={siteSettings?.contact_content} />} />
+        <Route path="/about" element={<AboutPage />} />
+        <Route path="/faq" element={<FAQPage />} />
+        <Route path="/roadmap" element={<RoadmapPage />} />
+        <Route path="/guide" element={<GuidePage />} />
       </Routes>
     </BrowserRouter>
   );
