@@ -49,7 +49,16 @@ export default function AdminPanel() {
   const [legalContent, setLegalContent] = useState({
     privacy: "",
     terms: "",
-    contact: ""
+    contact: "",
+    about: "",
+    faq: "",
+    roadmap: "",
+    guide: ""
+  });
+  const [aiSettings, setAiSettings] = useState({
+    hfTokens: [] as string[],
+    groqKey: '',
+    primaryProvider: 'hf' as 'hf' | 'groq'
   });
   const [savingSettings, setSavingSettings] = useState(false);
   const navigate = useNavigate();
@@ -63,10 +72,15 @@ export default function AdminPanel() {
           if (data && data.partner_banner) setPartnerBanner(data.partner_banner);
           if (data && data.footer_settings) setFooterSettings(data.footer_settings);
           if (data && data.footer_credits) setFooterCredits(data.footer_credits);
+          if (data && data.ai_settings) setAiSettings(data.ai_settings);
           if (data) setLegalContent({
             privacy: data.privacy_content || "",
             terms: data.terms_content || "",
-            contact: data.contact_content || ""
+            contact: data.contact_content || "",
+            about: data.about_content || "",
+            faq: data.faq_content || "",
+            roadmap: data.roadmap_content || "",
+            guide: data.guide_content || ""
           });
         });
     }
@@ -87,7 +101,12 @@ export default function AdminPanel() {
             footer_credits: footerCredits,
             privacy_content: legalContent.privacy,
             terms_content: legalContent.terms,
-            contact_content: legalContent.contact
+            contact_content: legalContent.contact,
+            about_content: legalContent.about,
+            faq_content: legalContent.faq,
+            roadmap_content: legalContent.roadmap,
+            guide_content: legalContent.guide,
+            ai_settings: aiSettings
           }
         })
       });
@@ -272,6 +291,99 @@ export default function AdminPanel() {
           </div>
         </div>
 
+        {/* AI Integrations Configuration */}
+        <div className="glass-card rounded-[2.5rem] overflow-hidden flex flex-col mb-12">
+          <div className="p-8 border-b border-white/5 bg-white/[0.02] flex items-center justify-between">
+            <h2 className="text-xl font-black flex items-center gap-3">
+              <Wand2 className="w-5 h-5 text-purple-400" />
+              AI Intelligence Matrix
+            </h2>
+            <button 
+              onClick={handleSaveSettings} 
+              disabled={savingSettings}
+              className="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 rounded-xl text-xs font-bold transition-colors flex items-center gap-2"
+            >
+              {savingSettings ? "Saving..." : <><Save className="w-4 h-4" /> Save Settings</>}
+            </button>
+          </div>
+          <div className="p-8 space-y-8">
+            <div className="grid md:grid-cols-2 gap-8">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <label className="text-[10px] text-slate-400 uppercase font-black tracking-widest">HuggingFace Fallback Tokens</label>
+                  <button 
+                    onClick={() => setAiSettings({ ...aiSettings, hfTokens: [...aiSettings.hfTokens, ''] })}
+                    className="text-[10px] font-black text-indigo-400 hover:text-indigo-300 uppercase tracking-widest"
+                  >
+                    + Add Token
+                  </button>
+                </div>
+                <div className="space-y-3">
+                  {aiSettings.hfTokens.map((token, idx) => (
+                    <div key={idx} className="flex gap-2">
+                      <input 
+                        type="password" 
+                        value={token} 
+                        onChange={e => {
+                          const newTokens = [...aiSettings.hfTokens];
+                          newTokens[idx] = e.target.value;
+                          setAiSettings({ ...aiSettings, hfTokens: newTokens });
+                        }}
+                        placeholder="hf_..."
+                        className="bg-white/5 p-3 rounded-xl text-sm outline-none flex-1 border border-white/5 focus:border-indigo-500/50 font-mono" 
+                      />
+                      <button 
+                        onClick={() => {
+                          const newTokens = aiSettings.hfTokens.filter((_, i) => i !== idx);
+                          setAiSettings({ ...aiSettings, hfTokens: newTokens });
+                        }}
+                        className="p-3 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded-xl transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                  {aiSettings.hfTokens.length === 0 && (
+                    <p className="text-xs text-slate-500 italic">No fallback tokens configured. Using system environment variables.</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                <div className="flex flex-col gap-2">
+                  <label className="text-[10px] text-slate-400 uppercase font-black tracking-widest">Groq API Key (Secondary Fallback)</label>
+                  <input 
+                    type="password" 
+                    value={aiSettings.groqKey} 
+                    onChange={e => setAiSettings({ ...aiSettings, groqKey: e.target.value })} 
+                    placeholder="gsk_..."
+                    className="bg-white/5 p-3 rounded-xl text-sm outline-none w-full border border-white/5 focus:border-indigo-500/50 font-mono" 
+                  />
+                </div>
+
+                <div className="flex flex-col gap-3 p-4 rounded-2xl bg-indigo-500/5 border border-indigo-500/10">
+                  <label className="text-[10px] text-indigo-300 uppercase font-black tracking-widest">Primary Engine Flow</label>
+                  <div className="flex gap-4">
+                    <button 
+                      onClick={() => setAiSettings({ ...aiSettings, primaryProvider: 'hf' })}
+                      className={`flex-1 p-3 rounded-xl text-xs font-black transition-all ${aiSettings.primaryProvider === 'hf' ? 'bg-indigo-500 text-white' : 'bg-white/5 text-slate-400 hover:bg-white/10'}`}
+                    >
+                      {"HF -> GROQ"}
+                    </button>
+                    <button 
+                      onClick={() => setAiSettings({ ...aiSettings, primaryProvider: 'groq' })}
+                      className={`flex-1 p-3 rounded-xl text-xs font-black transition-all ${aiSettings.primaryProvider === 'groq' ? 'bg-indigo-500 text-white' : 'bg-white/5 text-slate-400 hover:bg-white/10'}`}
+                    >
+                      {"GROQ -> HF"}
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-slate-500 italic">System will rotate through all available HF tokens if one hits rate limits.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Partner Banner Config */}
         <div className="glass-card rounded-[2.5rem] overflow-hidden flex flex-col mb-12">
           <div className="p-8 border-b border-white/5 bg-white/[0.02] flex items-center justify-between">
@@ -430,6 +542,49 @@ export default function AdminPanel() {
                  onChange={e => setLegalContent({ ...legalContent, contact: e.target.value })} 
                  className="bg-white/5 p-4 rounded-2xl text-xs outline-none w-full border border-white/5 focus:border-indigo-500/50 font-mono leading-relaxed" 
                  placeholder="Markdown-friendly content..."
+               />
+            </div>
+          </div>
+
+          <div className="p-8 pt-0 grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="flex flex-col gap-3">
+               <label className="text-[10px] text-slate-400 uppercase font-black tracking-widest">About Experience</label>
+               <textarea 
+                 rows={10} 
+                 value={legalContent.about} 
+                 onChange={e => setLegalContent({ ...legalContent, about: e.target.value })} 
+                 className="bg-white/5 p-4 rounded-2xl text-xs outline-none w-full border border-white/5 focus:border-indigo-500/50 font-mono leading-relaxed" 
+                 placeholder="About content..."
+               />
+            </div>
+            <div className="flex flex-col gap-3">
+               <label className="text-[10px] text-slate-400 uppercase font-black tracking-widest">Help Center (FAQ)</label>
+               <textarea 
+                 rows={10} 
+                 value={legalContent.faq} 
+                 onChange={e => setLegalContent({ ...legalContent, faq: e.target.value })} 
+                 className="bg-white/5 p-4 rounded-2xl text-xs outline-none w-full border border-white/5 focus:border-indigo-500/50 font-mono leading-relaxed" 
+                 placeholder="FAQ content..."
+               />
+            </div>
+            <div className="flex flex-col gap-3">
+               <label className="text-[10px] text-slate-400 uppercase font-black tracking-widest">Development Roadmap</label>
+               <textarea 
+                 rows={10} 
+                 value={legalContent.roadmap} 
+                 onChange={e => setLegalContent({ ...legalContent, roadmap: e.target.value })} 
+                 className="bg-white/5 p-4 rounded-2xl text-xs outline-none w-full border border-white/5 focus:border-indigo-500/50 font-mono leading-relaxed" 
+                 placeholder="Roadmap content..."
+               />
+            </div>
+            <div className="flex flex-col gap-3">
+               <label className="text-[10px] text-slate-400 uppercase font-black tracking-widest">Formatting Protocol</label>
+               <textarea 
+                 rows={10} 
+                 value={legalContent.guide} 
+                 onChange={e => setLegalContent({ ...legalContent, guide: e.target.value })} 
+                 className="bg-white/5 p-4 rounded-2xl text-xs outline-none w-full border border-white/5 focus:border-indigo-500/50 font-mono leading-relaxed" 
+                 placeholder="Unicode guide..."
                />
             </div>
           </div>

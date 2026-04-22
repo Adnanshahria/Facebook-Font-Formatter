@@ -1,10 +1,37 @@
-import React from 'react';
+import React, { useMemo, memo } from 'react';
 import { motion } from 'motion/react';
 
 export const itemVariants = {
   hidden: { y: 20, opacity: 0 },
   visible: { y: 0, opacity: 1 }
 };
+
+// Moved outside component to avoid recreation on every render
+function renderWithVisualFixes(text: string): React.ReactNode[] {
+  const result: React.ReactNode[] = [];
+  let temp = "";
+  
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+    if (char === '\u0336' || char === '\u0332') {
+      if (temp.length > 0) {
+        const baseChar = temp[temp.length - 1];
+        const preceding = temp.substring(0, temp.length - 1);
+        result.push(preceding);
+        result.push(
+          <span key={`${i}-fix`} className={char === '\u0336' ? 'visual-strike' : 'visual-underline'}>
+            {baseChar}
+          </span>
+        );
+        temp = "";
+      }
+    } else {
+      temp += char;
+    }
+  }
+  result.push(temp);
+  return result;
+}
 
 interface TextWorkspaceProps {
   inputText: string;
@@ -20,7 +47,7 @@ interface TextWorkspaceProps {
   setSavedSelections: (selections: { start: number, end: number }[]) => void;
 }
 
-export default function TextWorkspace({
+export default memo(function TextWorkspace({
   inputText,
   setInputText,
   handleScroll,
@@ -33,40 +60,14 @@ export default function TextWorkspace({
   backdropRef,
   setSavedSelections
 }: TextWorkspaceProps) {
-  
-  const renderWithVisualFixes = (text: string) => {
-    const result: React.ReactNode[] = [];
-    let temp = "";
-    
-    for (let i = 0; i < text.length; i++) {
-      const char = text[i];
-      if (char === '\u0336' || char === '\u0332') {
-        if (temp.length > 0) {
-          const baseChar = temp[temp.length - 1];
-          const preceding = temp.substring(0, temp.length - 1);
-          result.push(preceding);
-          result.push(
-            <span key={`${i}-fix`} className={char === '\u0336' ? 'visual-strike' : 'visual-underline'}>
-              {baseChar}
-            </span>
-          );
-          temp = "";
-        }
-      } else {
-        temp += char;
-      }
-    }
-    result.push(temp);
-    return result;
-  };
-
-  const renderBackdropContent = () => {
+  // Memoize the backdrop content — uses inputText directly (no deferral) so it stays in sync with the transparent textarea
+  const backdropContent = useMemo(() => {
     if (selectionMode !== 'multi' || savedSelections.length === 0) {
       return renderWithVisualFixes(inputText);
     }
     
     let lastIdx = 0;
-    const children = [];
+    const children: React.ReactNode[] = [];
     const sortedSels = [...savedSelections].sort((a, b) => a.start - b.start);
     
     sortedSels.forEach((sel, i) => {
@@ -84,24 +85,18 @@ export default function TextWorkspace({
       children.push(<span key="text-end">{renderWithVisualFixes(inputText.substring(lastIdx))}</span>);
     }
     return children;
-  };
+  }, [inputText, selectionMode, savedSelections]);
 
   return (
     <motion.div variants={itemVariants}>
       <div className="glass-card rounded-[2rem] bg-midnight/60 backdrop-blur-xl border border-white/10 shadow-2xl relative overflow-visible group/passage">
-        <div 
-          className="relative isolate" 
-          style={{ 
-            maskImage: 'linear-gradient(to bottom, transparent 0%, black 80px, black calc(100% - 80px), transparent 100%)', 
-            WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 80px, black calc(100% - 80px), transparent 100%)' 
-          }}
-        >
+        <div className="relative isolate">
           <div 
             ref={backdropRef}
-            className="absolute inset-0 pointer-events-none p-10 text-2xl leading-relaxed whitespace-pre-wrap break-words font-sans bg-transparent overflow-hidden premium-input passage-field text-white will-change-[color,transform]"
+            className="absolute inset-0 pointer-events-none p-6 md:p-10 text-xl md:text-2xl leading-relaxed whitespace-pre-wrap break-words font-sans bg-transparent overflow-hidden premium-input passage-field text-white will-change-[color,transform]"
             aria-hidden="true"
           >
-            {renderBackdropContent()}
+            {backdropContent}
           </div>
           <textarea
             ref={textareaRef}
@@ -110,7 +105,6 @@ export default function TextWorkspace({
             onChange={(e) => {
               setInputText(e.target.value);
               setSavedSelections([]);
-              handleSelection();
             }}
             onMouseDown={() => setIsDragging(true)}
             onMouseUp={() => {
@@ -133,10 +127,10 @@ export default function TextWorkspace({
             placeholder="Compose your message here..."
             dir="auto"
             spellCheck={false}
-            className={`relative z-10 w-full min-h-[400px] md:min-h-[500px] max-h-[calc(100vh-280px)] p-10 resize-y focus:outline-none text-2xl leading-relaxed premium-input passage-field rounded-b-[2rem] bg-transparent font-sans text-transparent caret-white overflow-y-auto ${!isDragging && selectionMode === 'multi' && savedSelections.length > 0 ? 'hide-selection' : ''}`}
+            className={`relative z-[50] w-full min-h-[50vh] md:min-h-[500px] max-h-[calc(100vh-280px)] p-6 md:p-10 resize-y focus:outline-none text-xl md:text-2xl leading-relaxed premium-input passage-field rounded-b-[2rem] bg-transparent font-sans text-transparent caret-white overflow-y-auto cursor-text ${!isDragging && selectionMode === 'multi' && savedSelections.length > 0 ? 'hide-selection' : ''}`}
           />
         </div>
       </div>
     </motion.div>
   );
-}
+});

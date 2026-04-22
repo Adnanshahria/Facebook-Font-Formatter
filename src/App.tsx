@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useDeferredValue } from 'react';
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import AdminPanel from './AdminPanel';
 import EditorToolbar from './components/EditorToolbar';
@@ -23,7 +23,11 @@ import {
   Facebook,
   Instagram,
   Twitter,
-  Sparkles
+  Sparkles,
+  X,
+  Loader2,
+  Zap,
+  ArrowUp
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import * as unicode from './lib/unicodeUtils';
@@ -66,10 +70,12 @@ const WhatsAppIcon = ({ className }: { className?: string }) => (
 
 const GoogleAd = ({ className, slot, format = 'auto', responsive = 'true' }: { className?: string, slot: string, format?: string, responsive?: string }) => {
   const adRef = useRef<boolean>(false);
+  const isLocalhost = typeof window !== 'undefined' && window.location.hostname === 'localhost';
 
   useEffect(() => {
-    // Only push if we haven't already and the window object exists
-    if (!adRef.current && typeof window !== 'undefined' && (window as any).adsbygoogle) {
+    if (isLocalhost) return;
+
+    if (!adRef.current && (window as any).adsbygoogle) {
       try {
         (window as any).adsbygoogle.push({});
         adRef.current = true;
@@ -77,7 +83,16 @@ const GoogleAd = ({ className, slot, format = 'auto', responsive = 'true' }: { c
         console.error('AdSense push error:', err);
       }
     }
-  }, []);
+  }, [isLocalhost]);
+
+  if (isLocalhost) {
+    return (
+      <div className={`bg-white/5 border border-white/10 flex flex-col items-center justify-center rounded-lg ${className}`}>
+        <span className="text-white/40 text-[10px] uppercase tracking-widest font-bold">Ad Placeholder</span>
+        <span className="text-white/20 text-[8px] mt-0.5">Hidden on Localhost</span>
+      </div>
+    );
+  }
 
   return (
     <ins
@@ -116,14 +131,20 @@ function MainApp({
   const [redoStack, setRedoStack] = useState<string[]>([]);
   const [showEmailPopup, setShowEmailPopup] = useState(false);
   const [isAiLoading, setIsAiLoading] = useState(false);
+  const [showMobileAd, setShowMobileAd] = useState(false);
+  const [adDismissCount, setAdDismissCount] = useState(0);
+  const adReshowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [showAiInterstitial, setShowAiInterstitial] = useState(false);
+  const [interstitialCountdown, setInterstitialCountdown] = useState(5);
+  const [pendingAiMode, setPendingAiMode] = useState<'enhance' | 'compact' | 'highlight' | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const backdropRef = useRef<HTMLDivElement>(null);
-  const handleScroll = (e: React.UIEvent<HTMLTextAreaElement>) => {
+  const handleScroll = useCallback((e: React.UIEvent<HTMLTextAreaElement>) => {
     if (backdropRef.current) {
       backdropRef.current.scrollTop = e.currentTarget.scrollTop;
       backdropRef.current.scrollLeft = e.currentTarget.scrollLeft;
     }
-  };
+  }, []);
 
 
   const getIcon = (name: string, props: any) => {
@@ -145,7 +166,24 @@ function MainApp({
     setHistory(prev => prev.slice(0, -1));
   };
 
-  const handleAiAction = async (mode: 'enhance' | 'compact' | 'highlight') => {
+  const handleAiAction = (mode: 'enhance' | 'compact' | 'highlight') => {
+    if (!inputText.trim()) return;
+    setPendingAiMode(mode);
+    setInterstitialCountdown(5);
+    setShowAiInterstitial(true);
+    
+    const timer = setInterval(() => {
+      setInterstitialCountdown(prev => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  const executeAiAction = async (mode: 'enhance' | 'compact' | 'highlight') => {
     if (!inputText.trim()) return;
     setIsAiLoading(true);
     saveToHistory(inputText);
@@ -172,6 +210,14 @@ function MainApp({
       handleUndo();
     }
     setIsAiLoading(false);
+  };
+
+  const confirmAiAction = () => {
+    if (pendingAiMode) {
+      executeAiAction(pendingAiMode);
+      setShowAiInterstitial(false);
+      setPendingAiMode(null);
+    }
   };
 
   // Visitor Tracking
@@ -219,6 +265,39 @@ function MainApp({
     };
   }, []);
 
+  // Mobile Ad Timing Logic — 20s initial delay, max 7 dismissals, 2.5 min re-show
+  const AD_MAX_DISMISSALS = 7;
+  const AD_RESHOW_DELAY = 150000; // 2.5 minutes
+
+  useEffect(() => {
+    const adTimer = setTimeout(() => {
+      setShowMobileAd(true);
+    }, 20000); // 20 seconds
+
+    return () => clearTimeout(adTimer);
+  }, []);
+
+  const handleDismissAd = () => {
+    setShowMobileAd(false);
+    const newCount = adDismissCount + 1;
+    setAdDismissCount(newCount);
+
+    // If under the limit, schedule a re-show after 2.5 minutes
+    if (newCount < AD_MAX_DISMISSALS) {
+      if (adReshowTimerRef.current) clearTimeout(adReshowTimerRef.current);
+      adReshowTimerRef.current = setTimeout(() => {
+        setShowMobileAd(true);
+      }, AD_RESHOW_DELAY);
+    }
+  };
+
+  // Cleanup re-show timer on unmount
+  useEffect(() => {
+    return () => {
+      if (adReshowTimerRef.current) clearTimeout(adReshowTimerRef.current);
+    };
+  }, []);
+
   const handleEmailSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (email && email.includes('@')) {
@@ -250,16 +329,18 @@ function MainApp({
   };
 
   useEffect(() => {
-    setDetectedScript(unicode.detectScript(inputText));
-    
-    // Save to history for typing after a short pause
+    // Debounce only script detection — history is saved on explicit actions only
     const timer = setTimeout(() => {
-      saveToHistory(inputText);
-    }, 1000);
+      setDetectedScript(unicode.detectScript(inputText));
+    }, 400);
     return () => clearTimeout(timer);
   }, [inputText]);
 
-  const handleSelection = () => {
+  // Deferred values for non-critical UI so they don't block typing
+  const deferredInputLength = useDeferredValue(inputText.length);
+  const deferredHistoryCount = useDeferredValue(history.length);
+
+  const handleSelection = useCallback(() => {
     const textarea = textareaRef.current;
     if (!textarea) return;
     setTimeout(() => {
@@ -286,7 +367,7 @@ function MainApp({
         setHasSelection(hasSel);
       }
     }, 0);
-  };
+  }, [selectionMode]);
 
   const applyStyleToSelection = (styleFunc: (text: string) => string) => {
     const textarea = textareaRef.current;
@@ -384,7 +465,7 @@ function MainApp({
   return (
     <div className="min-h-screen">
       {/* Header */}
-      <header className="sticky top-0 z-50 mx-auto w-full max-w-[1920px] md:w-[98%] lg:w-[96%] border-x border-b border-white/10 bg-midnight/60 backdrop-blur-2xl px-6 md:px-10 lg:pl-12 lg:pr-8 py-4 rounded-b-[2rem] flex items-center justify-between shadow-2xl shadow-indigo-500/5 transition-all duration-500">
+      <header className="sticky top-0 z-50 mx-auto w-full max-w-[1920px] md:w-[98%] lg:w-[96%] border-x-0 md:border-x border-b border-white/10 bg-midnight/80 md:bg-midnight/60 backdrop-blur-3xl md:backdrop-blur-2xl px-4 py-3 md:px-10 lg:pl-12 lg:pr-8 md:py-4 rounded-b-[1.5rem] md:rounded-b-[2rem] flex items-center justify-between shadow-2xl shadow-indigo-500/5 transition-all duration-500">
         <motion.div 
           initial={{ x: -20, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
@@ -456,7 +537,7 @@ function MainApp({
         </motion.div>
       </header>
 
-      <main className="max-w-screen-2xl mx-auto p-4 md:p-6 lg:p-10 pt-12">
+      <main className="max-w-screen-2xl mx-auto p-2 md:p-6 lg:p-10 pt-6 md:pt-12">
         <motion.div 
           variants={containerVariants}
           initial="hidden"
@@ -562,16 +643,106 @@ function MainApp({
 
           {/* Main Content Area */}
           <div className="flex flex-col gap-10 lg:mt-0 overflow-visible">
+            {/* Mobile Only Intro & Instructions */}
+            <motion.div variants={itemVariants} className="flex lg:hidden flex-col gap-6">
+              <motion.div 
+                whileHover={{ scale: 1.01 }}
+                className="glass-card rounded-[2rem] p-6 border-0 text-left relative overflow-hidden flex items-center gap-6 group"
+              >
+                {/* Background Accents */}
+                <div className="absolute -top-10 -right-10 w-40 h-40 bg-indigo-500/20 rounded-full blur-[60px] pointer-events-none animate-pulse" />
+                <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-purple-500/10 rounded-full blur-[60px] pointer-events-none" />
+                
+                <div className="flex-1 relative z-10">
+                  <motion.h2 
+                    initial={{ x: -10, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    className="text-xl font-black text-white leading-tight mb-2 tracking-tight"
+                  >
+                    Enhance Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">Social Presence</span>
+                  </motion.h2>
+                  <motion.p 
+                    initial={{ x: -10, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ delay: 0.1 }}
+                    className="text-slate-400 text-[10px] font-medium leading-relaxed"
+                  >
+                    Elevate your profiles with cinematic formatting for every platform <span className="text-indigo-400 font-bold">& many more.</span>
+                  </motion.p>
+                </div>
+
+                <motion.div 
+                  initial="hidden"
+                  animate="visible"
+                  variants={{
+                    visible: { transition: { staggerChildren: 0.1 } }
+                  }}
+                  className="flex-shrink-0 grid grid-cols-2 gap-2.5 relative z-10"
+                >
+                  {[
+                    { icon: <Facebook className="w-4 h-4" />, color: '#1877F2', glow: 'shadow-blue-500/20' },
+                    { icon: <Instagram className="w-4 h-4" />, color: '#E4405F', glow: 'shadow-pink-500/20' },
+                    { icon: <Twitter className="w-4 h-4" />, color: '#1DA1F2', glow: 'shadow-sky-500/20' },
+                    { icon: <AtSign className="w-4 h-4" />, color: '#FFFFFF', glow: 'shadow-white/10' }
+                  ].map((platform, i) => (
+                    <motion.div 
+                      key={i}
+                      variants={{
+                        hidden: { scale: 0, opacity: 0 },
+                        visible: { scale: 1, opacity: 1 }
+                      }}
+                      whileHover={{ y: -3, scale: 1.1 }}
+                      className={`w-10 h-10 rounded-2xl bg-white/[0.03] border border-white/10 flex items-center justify-center shadow-xl ${platform.glow} transition-all duration-300 backdrop-blur-sm`}
+                      style={{ color: platform.color }}
+                    >
+                      {platform.icon}
+                    </motion.div>
+                  ))}
+                </motion.div>
+              </motion.div>
+
+
+              <div className="bg-white/[0.02] border border-white/5 rounded-3xl p-5 overflow-hidden relative">
+                <div className="flex flex-col gap-4">
+                  <div className="flex flex-col gap-1 text-center">
+                    <h2 className="text-[11px] font-black text-white uppercase tracking-widest">How It Works</h2>
+                    <p className="text-slate-500 text-[9px] font-bold uppercase tracking-wider">Four steps to premium formatting</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { step: "01", title: "Write", desc: "Type message", icon: <Keyboard className="w-4 h-4" /> },
+                      { step: "02", title: "Select", desc: "Highlight text", icon: <MousePointer2 className="w-4 h-4" /> },
+                      { step: "03", title: "Style", desc: "Click preset", icon: <Wand2 className="w-4 h-4" /> },
+                      { step: "04", title: "Paste", desc: "Use anywhere", icon: <ClipboardType className="w-4 h-4" /> }
+                    ].map((s, i) => (
+                      <div key={i} className="glass-card bg-midnight/40 p-3 rounded-xl flex flex-col gap-1.5 relative overflow-hidden">
+                        <div className="flex items-center gap-2">
+                          <div className="text-slate-500">
+                            {React.cloneElement(s.icon as React.ReactElement, { className: 'w-2.5 h-2.5' })}
+                          </div>
+                          <h4 className="text-[10px] font-black text-white uppercase tracking-widest leading-none">{s.title}</h4>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <p className="text-slate-500 text-[8px] font-medium leading-tight">{s.desc}</p>
+                          <span className="text-[8px] font-black text-indigo-400/20 uppercase leading-none">{s.step}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+
             {/* Editor Section */}
-            <div className="w-full flex flex-col gap-6 sticky top-32 z-40 h-fit">
+            <div className="w-full flex flex-col gap-6 sticky top-24 md:top-32 z-40 h-fit">
               <EditorToolbar 
                 selectionMode={selectionMode}
                 setSelectionMode={setSelectionMode}
                 applyStyleToSelection={applyStyleToSelection}
-                historyCount={history.length}
+                historyCount={deferredHistoryCount}
                 handleUndo={handleUndo}
                 handleCopy={handleCopy}
-                inputTextLength={inputText.length}
+                inputTextLength={deferredInputLength}
                 detectedScript={detectedScript}
                 isCopied={isCopied}
                 showEmojiPicker={showEmojiPicker}
@@ -666,7 +837,7 @@ function MainApp({
         </motion.div>
 
         {/* Post-Passage Content Area (Relocated from grid to allow clean scroll) */}
-        <div className="max-w-7xl mx-auto px-6 mt-20 space-y-20">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 mt-12 md:mt-20 space-y-12 md:space-y-20">
           {/* Bottom Ad Space */}
           <motion.div variants={itemVariants} className="w-full h-[100px] glass-card rounded-3xl border border-dashed border-white/10 flex flex-col items-center justify-center relative overflow-hidden">
              <div className="absolute top-2 left-4 z-10 px-2 py-0.5 rounded bg-slate-900/80 border border-white/5 opacity-50">
@@ -712,98 +883,70 @@ function MainApp({
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="mt-20 py-24 border-t border-white/5 bg-gradient-to-b from-transparent to-black/40">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-8">
+      <footer className="mt-20 md:mt-40 border-t border-white/5 bg-midnight/60 mesh-gradient-footer footer-backlit relative overflow-hidden">
+        {/* Decorative elements */}
+        <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-indigo-500/20 to-transparent" />
+        <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-[600px] h-[200px] bg-indigo-500/10 rounded-[100%] blur-[120px] pointer-events-none" />
+
+        <div className="max-w-7xl mx-auto px-6 py-20 md:py-32 relative z-10">
+          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-x-10 gap-y-16 lg:gap-16">
             
             {/* Pillar 1: Identity */}
-            <div className="flex flex-col space-y-6">
-              <div className="flex items-center gap-3">
-                <Logo className="w-8 h-8 opacity-80" />
-                <span className="text-lg font-black tracking-tight text-white">SocialFont</span>
-              </div>
-              <div className="space-y-2">
-                <p className="text-[10px] font-bold text-slate-500 tracking-widest leading-relaxed">
-                  {siteSettings?.footer_credits?.tagline1 || "SocialFont Engine • Engineered for Quality"}
-                </p>
-                <p className="text-[8px] uppercase font-black tracking-[0.4em] text-slate-600 opacity-60 leading-relaxed">
-                  {siteSettings?.footer_credits?.tagline2 || "Pure Unicode • No External Fonts Required"}
-                </p>
-              </div>
-              <div className="pt-4">
-                <a 
-                  href={siteSettings?.footer_settings?.orbitUrl || 'https://orbitsaas.cloud'} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-[9px] font-black uppercase tracking-[0.2em] text-indigo-400 group flex items-center gap-2 hover:text-indigo-300 transition-colors"
-                >
-                  {siteSettings?.footer_credits?.copyright || "© 2026 OrbitSaaS. All rights reserved."}
-                  <ExternalLink className="w-2.5 h-2.5 opacity-40 group-hover:opacity-100 transition-opacity" />
-                </a>
-              </div>
-            </div>
-
-            {/* Pillar 2: Platform */}
-            <div className="flex flex-col space-y-6">
-              <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Platform</h4>
-              <div className="flex flex-col gap-4">
-                {[
-                  { label: 'About SocialFont', path: '/about' },
-                  { label: 'Frequently Asked', path: '/faq' },
-                  { label: 'Tool Roadmap', path: '/roadmap' },
-                  { label: 'Unicode Guide', path: '/guide' }
-                ].map(link => (
-                  <Link 
-                    key={link.label} 
-                    to={link.path} 
-                    className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 hover:text-white transition-all duration-300"
-                  >
-                    {link.label}
-                  </Link>
-                ))}
-              </div>
-            </div>
-
-            {/* Pillar 3: Support */}
-            <div className="flex flex-col space-y-6">
-              <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Support</h4>
-              <div className="flex flex-col gap-4">
-                {[
-                  { label: 'Privacy Policy', path: '/privacy' },
-                  { label: 'Terms of Service', path: '/terms' },
-                  { label: 'Contact Support', path: '/contact' }
-                ].map(link => (
-                  <Link 
-                    key={link.label} 
-                    to={link.path} 
-                    className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 hover:text-white transition-all duration-300"
-                  >
-                    {link.label}
-                  </Link>
-                ))}
-              </div>
-            </div>
-
-            {/* Pillar 4: Community & Newsletter */}
             <div className="flex flex-col space-y-8">
-              <div className="space-y-4">
-                <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Stay Magic</h4>
-                <div className="relative group max-w-[240px]">
-                  <input 
-                    type="email" 
-                    placeholder="Email Address" 
-                    className="w-full bg-white/[0.03] border border-white/5 rounded-xl px-4 py-3 text-[10px] font-bold text-white outline-none focus:border-indigo-500/50 transition-all placeholder-slate-600"
-                  />
-                  <button className="absolute right-2 top-1.5 bottom-1.5 px-3 rounded-lg bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500 hover:text-white transition-all duration-300">
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center gap-3 group cursor-pointer w-fit">
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-indigo-500/20 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                    <Logo className="w-10 h-10 transition-all duration-700 group-hover:scale-110 group-hover:rotate-[10deg] relative z-10" />
+                  </div>
+                  <div>
+                    <span className="text-2xl font-black tracking-tight text-white block">SocialFont</span>
+                    <div className="flex items-center gap-2">
+                      <div className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                      </div>
+                      <span className="text-[9px] uppercase font-black tracking-[0.2em] text-emerald-500/80">Engine Operational</span>
+                    </div>
+                  </div>
                 </div>
+                <p className="text-xs font-medium text-slate-400 tracking-wide leading-relaxed max-w-[260px]">
+                  {siteSettings?.footer_credits?.tagline1 || "The professional choice for creators seeking cinematic text formatting across all social engines."}
+                </p>
               </div>
 
-              <div className="space-y-4 pt-2">
-                <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Connect</h4>
-                <div className="flex items-center gap-6">
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[8px] font-black uppercase tracking-widest text-slate-500 hover:bg-white/10 transition-colors cursor-default">Stable v2.4</div>
+                <div className="px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-[8px] font-black uppercase tracking-widest text-indigo-400 hover:bg-indigo-500/20 transition-colors cursor-default">Enterprise Edition</div>
+              </div>
+            </div>
+
+            {/* Pillar 2: Community & Newsletter */}
+            <div className="flex flex-col space-y-8">
+              <div className="space-y-5">
+                <div className="flex items-center gap-3">
+                  <Sparkles className="w-4 h-4 text-indigo-400" />
+                  <h4 className="text-[11px] font-black uppercase tracking-[0.3em] text-white">Join the Circle</h4>
+                </div>
+                <div className="relative group w-full">
+                  <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500/20 to-purple-500/20 rounded-2xl blur opacity-0 group-focus-within:opacity-100 transition duration-1000" />
+                  <div className="relative">
+                    <input 
+                      type="email" 
+                      placeholder="Your professional email" 
+                      className="w-full bg-black/40 border border-white/10 rounded-xl px-5 py-4 text-xs font-bold text-white outline-none focus:border-indigo-500/50 transition-all placeholder-slate-600 backdrop-blur-sm"
+                    />
+                    <button className="absolute right-2 top-2 bottom-2 px-4 rounded-lg bg-indigo-500 text-white hover:bg-indigo-600 transition-all duration-300 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+                <p className="text-[9px] text-slate-600 font-bold uppercase tracking-widest">No spam. Only major engine updates.</p>
+              </div>
+
+              <div className="space-y-5">
+                <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">Global Network</h4>
+                <div className="flex flex-wrap items-center gap-4">
                   {[
                     { id: 'facebook', icon: <Facebook />, color: '#1877F2', url: siteSettings?.footer_settings?.facebookUrl, enabled: siteSettings?.footer_settings?.facebookEnabled ?? true },
                     { id: 'instagram', icon: <Instagram />, color: '#E4405F', url: siteSettings?.footer_settings?.instagramUrl, enabled: siteSettings?.footer_settings?.instagramEnabled ?? true },
@@ -814,22 +957,208 @@ function MainApp({
                       href={social.url || '#'}
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className={`transition-all duration-300 hover:-translate-y-1 transform hover:scale-110 ${social.url ? 'text-slate-500 hover:text-white' : 'text-slate-700 pointer-events-none'}`}
-                      style={{ color: social.url ? undefined : social.color }}
-                      onMouseEnter={(e) => { if(social.url) e.currentTarget.style.color = social.color }}
-                      onMouseLeave={(e) => { if(social.url) e.currentTarget.style.color = '' }}
+                      className={`w-11 h-11 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center transition-all duration-500 hover:-translate-y-2 hover:bg-white/10 hover:border-white/20 group/social ${social.url ? 'text-slate-400' : 'text-slate-700 pointer-events-none'}`}
                       title={social.id}
                     >
-                      {React.cloneElement(social.icon as React.ReactElement, { className: 'w-4 h-4' })}
+                      {React.cloneElement(social.icon as React.ReactElement, { 
+                        className: 'w-5 h-5 transition-colors duration-500',
+                        style: { color: social.url ? undefined : social.color }
+                      })}
                     </a>
                   ))}
                 </div>
               </div>
             </div>
 
+            {/* Pillar 3: Platform */}
+            <div className="flex flex-col space-y-8">
+              <h4 className="text-[11px] font-black uppercase tracking-[0.3em] text-white">Platform</h4>
+              <div className="flex flex-col gap-5">
+                {[
+                  { label: 'About Experience', path: '/about' },
+                  { label: 'Help Center (FAQ)', path: '/faq' },
+                  { label: 'Development Roadmap', path: '/roadmap' },
+                  { label: 'Formatting Protocol', path: '/guide' }
+                ].map(link => (
+                  <Link 
+                    key={link.label} 
+                    to={link.path} 
+                    className="text-xs font-bold tracking-wide text-slate-400 hover:text-white transition-all duration-300 flex items-center gap-3 group/link"
+                  >
+                    <div className="w-1.5 h-1.5 rounded-full border border-indigo-500/50 group-hover:bg-indigo-500 transition-all" />
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            {/* Pillar 4: Support */}
+            <div className="flex flex-col space-y-8">
+              <div className="flex items-center justify-between">
+                <h4 className="text-[11px] font-black uppercase tracking-[0.3em] text-white">Support</h4>
+                <button 
+                  onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                  className="p-2 rounded-lg bg-white/5 border border-white/10 text-slate-500 hover:text-white hover:bg-white/10 transition-all group"
+                  title="Back to Top"
+                >
+                  <ArrowUp className="w-4 h-4 group-hover:-translate-y-0.5 transition-transform" />
+                </button>
+              </div>
+              <div className="flex flex-col gap-5">
+                {[
+                  { label: 'Privacy Protocol', path: '/privacy' },
+                  { label: 'Terms of Engagement', path: '/terms' },
+                  { label: 'Secure Support', path: '/contact' }
+                ].map(link => (
+                  <Link 
+                    key={link.label} 
+                    to={link.path} 
+                    className="text-xs font-bold tracking-wide text-slate-400 hover:text-white transition-all duration-300 flex items-center gap-3 group/link"
+                  >
+                    <div className="w-1.5 h-1.5 rounded-full border border-purple-500/50 group-hover:bg-purple-500 transition-all" />
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+          </div>
+
+          {/* Bottom Bar */}
+          <div className="mt-24 pt-12 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-8">
+            <div className="flex flex-col items-center md:items-start gap-2">
+              <a 
+                href={siteSettings?.footer_settings?.orbitUrl || 'https://orbitsaas.cloud'} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500 group flex items-center gap-3 hover:text-white transition-all duration-500"
+              >
+                <span>© 2026</span>
+                <span className="glow-text-premium transition-all duration-500 group-hover:scale-105">ORBITSAAS</span>
+                <span className="opacity-40">•</span>
+                <span className="opacity-60">All Rights Reserved</span>
+                <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-40 transition-opacity" />
+              </a>
+            </div>
+            
+            <div className="flex items-center gap-8">
+               <div className="flex items-center gap-3 px-4 py-2 rounded-full bg-white/[0.02] border border-white/5">
+                  <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.8)]" />
+                  <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">Encryption Active</span>
+               </div>
+               <div className="hidden sm:flex items-center gap-3 px-4 py-2 rounded-full bg-white/[0.02] border border-white/5">
+                  <Zap className="w-3 h-3 text-amber-500" />
+                  <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">Latency: 14ms</span>
+               </div>
+            </div>
           </div>
         </div>
       </footer>
+
+      {/* Mobile Sticky Bottom Ad */}
+      <AnimatePresence>
+        {showMobileAd && (
+          <motion.div 
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            className="fixed bottom-0 left-0 right-0 z-[100] block lg:hidden p-3 pb-4"
+          >
+            <div className="mx-auto max-w-[340px] glass-card rounded-2xl border border-white/10 bg-midnight/95 backdrop-blur-3xl shadow-2xl p-2 relative flex flex-col items-center justify-center">
+              <button 
+                onClick={handleDismissAd}
+                className="absolute -top-2.5 -right-2.5 bg-slate-800 hover:bg-slate-700 transition-colors rounded-full p-1.5 border border-white/10 text-slate-400 hover:text-white shadow-lg"
+              >
+                <X className="w-3 h-3" />
+              </button>
+              <div className="absolute top-1 left-2">
+                <span className="text-[6px] uppercase font-black tracking-widest text-slate-500">Sponsored</span>
+              </div>
+              <div className="w-full h-[50px] mt-3 flex items-center justify-center border border-dashed border-white/5 rounded-lg bg-black/20">
+                {/* When you have the Ad Unit, replace this with: <GoogleAd slot="YOUR_NEW_SLOT_ID" className="w-[320px] h-[50px]" format="horizontal" /> */}
+                <p className="text-slate-600 text-[10px] uppercase font-bold tracking-[0.2em]">320x50 AD UNIT</p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Premium AI Interstitial Ad Gate */}
+      <AnimatePresence>
+        {showAiInterstitial && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] flex items-center justify-center p-4 sm:p-6"
+          >
+            <div className="absolute inset-0 bg-midnight/80 backdrop-blur-2xl" />
+            
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative w-full max-w-2xl glass-card rounded-[2rem] md:rounded-[3rem] border border-white/10 shadow-2xl overflow-hidden bg-midnight/40"
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-transparent to-purple-500/10 opacity-50" />
+              
+              <div className="relative p-6 sm:p-10 flex flex-col items-center text-center">
+                <div className="w-16 h-16 rounded-2xl bg-indigo-500/20 flex items-center justify-center mb-6 border border-indigo-500/30">
+                  <Sparkles className="w-8 h-8 text-indigo-400" />
+                </div>
+                
+                <h2 className="text-2xl sm:text-3xl font-display font-black text-white mb-2 tracking-tight">
+                  Unlocking <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">AI Power</span>
+                </h2>
+                <p className="text-slate-400 text-sm sm:text-base max-w-md mb-8 font-medium">
+                  Please wait a few seconds while we prepare your AI-enhanced text. Sponsored content helps keep our AI tools free for everyone.
+                </p>
+
+                <div className="w-full max-w-[336px] min-h-[280px] bg-black/40 rounded-2xl border border-white/5 flex flex-col items-center justify-center p-4 mb-8 relative group">
+                  <div className="absolute top-2 left-3">
+                    <span className="text-[7px] uppercase font-black tracking-widest text-slate-600">Advertisement</span>
+                  </div>
+                  
+                  {/* When you have the Slot ID, replace this with: <GoogleAd slot="YOUR_AI_SLOT_ID" className="w-[300px] h-[250px]" format="rectangle" /> */}
+                  <div className="w-[300px] h-[250px] flex items-center justify-center border border-dashed border-white/10 rounded-xl bg-white/[0.02]">
+                    <p className="text-slate-700 text-[10px] uppercase font-black tracking-[0.3em]">300x250 AD UNIT</p>
+                  </div>
+                </div>
+
+                <div className="flex flex-col items-center gap-4 w-full sm:w-auto">
+                  {interstitialCountdown > 0 ? (
+                    <div className="flex items-center gap-3 px-8 py-4 rounded-2xl bg-white/5 border border-white/10">
+                      <Loader2 className="w-5 h-5 text-indigo-400 animate-spin" />
+                      <span className="text-sm font-black uppercase tracking-widest text-slate-300">
+                        Continue in <span className="text-indigo-400 text-lg ml-1">{interstitialCountdown}s</span>
+                      </span>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={confirmAiAction}
+                      className="group flex items-center gap-3 px-10 py-4 bg-indigo-500 hover:bg-indigo-600 text-white rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-indigo-500/20 transition-all duration-300 hover:scale-105 active:scale-95"
+                    >
+                      <Zap className="w-5 h-5 fill-current" />
+                      <span>Continue to AI</span>
+                      <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                    </button>
+                  )}
+                  
+                  <button 
+                    onClick={() => {
+                      setShowAiInterstitial(false);
+                      setPendingAiMode(null);
+                    }}
+                    className="text-[10px] font-bold uppercase tracking-widest text-slate-500 hover:text-slate-300 transition-colors"
+                  >
+                    Cancel and Return
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Premium Login / Email Popup */}
       <AnimatePresence>
@@ -966,10 +1295,10 @@ export default function App() {
         <Route path="/privacy" element={<PrivacyPolicy content={siteSettings?.privacy_content} />} />
         <Route path="/terms" element={<TermsOfService content={siteSettings?.terms_content} />} />
         <Route path="/contact" element={<Contact content={siteSettings?.contact_content} />} />
-        <Route path="/about" element={<AboutPage />} />
-        <Route path="/faq" element={<FAQPage />} />
-        <Route path="/roadmap" element={<RoadmapPage />} />
-        <Route path="/guide" element={<GuidePage />} />
+        <Route path="/about" element={<AboutPage content={siteSettings?.about_content} />} />
+        <Route path="/faq" element={<FAQPage content={siteSettings?.faq_content} />} />
+        <Route path="/roadmap" element={<RoadmapPage content={siteSettings?.roadmap_content} />} />
+        <Route path="/guide" element={<GuidePage content={siteSettings?.guide_content} />} />
       </Routes>
     </BrowserRouter>
   );

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { 
   Bold, 
   Italic, 
@@ -19,7 +19,8 @@ import {
   Wand2,
   Minimize2,
   Highlighter,
-  Loader2
+  Loader2,
+  Sparkles
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import * as unicode from '../lib/unicodeUtils';
@@ -41,8 +42,7 @@ export const toolbarOptions = [
   { icon: <div className="w-5 h-5 bg-current rounded-sm" />, label: 'Square Filled', displayLabel: 'Sq Fill', func: (t: string) => unicode.toFacebookSquare(t, true) },
   { icon: <span className="text-sm font-black">aA</span>, label: 'Sarcasm', displayLabel: 'Sarcasm', func: unicode.toSarcasmCase },
   { icon: <div className="rotate-180 scale-x-[-1]"><Search className="w-5 h-5" /></div>, label: 'Mirror', displayLabel: 'Mirror', func: unicode.toMirrorText },
-  { icon: <span className="text-[10px] font-black underline underline-offset-4">abc</span>, label: 'Caps', displayLabel: 'Caps', func: unicode.toSmallCaps },
-  { icon: <Eraser className="w-5 h-5" />, label: 'Normalize', displayLabel: 'Clear', func: unicode.normalizeText, isSpecial: true },
+  { icon: <span className="text-[10px] font-black underline underline-offset-4">abc</span>, label: 'Caps', displayLabel: 'Caps', func: unicode.toSmallCaps }
 ];
 
 export const itemVariants = {
@@ -70,7 +70,7 @@ interface EditorToolbarProps {
   isAiLoading: boolean;
 }
 
-export default function EditorToolbar({
+export default memo(function EditorToolbar({
   selectionMode,
   setSelectionMode,
   applyStyleToSelection,
@@ -173,130 +173,157 @@ export default function EditorToolbar({
 
         {/* Formatting Toolbar */}
         <div className="bg-white/[0.01]">
-          <div className="flex flex-wrap items-center gap-1.5 px-6 py-1.5">
+          <div className="flex flex-wrap justify-center md:justify-start items-center gap-x-0.5 gap-y-2 md:gap-1.5 px-1 sm:px-2 py-3 md:px-6 md:py-1.5 w-full">
             {toolbarOptions.map((opt, idx) => (
               <button
                 key={idx}
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => applyStyleToSelection(opt.func)}
-                className={`group flex flex-col items-center gap-1 min-w-[3rem] py-1 rounded-xl transition-all duration-200 ${
-                  opt.isSpecial
-                    ? 'text-orange-400 hover:bg-orange-400/10'
-                    : 'text-slate-300 hover:bg-indigo-500/10 hover:text-white'
-                }`}
+                className="group flex flex-col items-center gap-0.5 md:gap-1 w-[16%] sm:w-[14%] md:w-auto md:min-w-[3rem] py-1.5 md:py-1 rounded-lg md:rounded-xl transition-all duration-200 text-slate-300 hover:bg-indigo-500/10 hover:text-white"
                 title={opt.label}
               >
-                <div className="text-lg transition-transform group-hover:scale-110 duration-200">{opt.icon}</div>
-                <span className={`text-[8px] uppercase font-black tracking-widest transition-colors duration-200 ${opt.isSpecial ? 'text-orange-400/60 group-hover:text-orange-400' : 'text-slate-500 group-hover:text-white'}`}>
+                <div className="text-[1.1rem] md:text-lg transition-transform group-hover:scale-110 duration-200 flex items-center justify-center [&>svg]:w-4 [&>svg]:h-4 md:[&>svg]:w-5 md:[&>svg]:h-5">{opt.icon}</div>
+                <span className="text-[6px] md:text-[8px] uppercase font-black tracking-widest md:tracking-widest transition-colors duration-200 text-slate-500 group-hover:text-white">
                   {opt.displayLabel}
                 </span>
               </button>
             ))}
 
-            <div className="w-px h-8 bg-white/10 mx-2" />
+            <div className="hidden md:block shrink-0 w-px h-8 bg-white/10 mx-2" />
 
-            <div className="relative">
-              <button
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                className="group flex flex-col items-center gap-1 min-w-[3rem] py-1 rounded-xl transition-all text-yellow-500 hover:bg-yellow-500/10"
-                title="Emoji"
-              >
-                <div className="transition-transform group-hover:scale-110 duration-200">
-                  <Smile className="w-5 h-5" />
-                </div>
-                <span className="text-[8px] uppercase font-black tracking-widest text-yellow-500/60 group-hover:text-yellow-500">
-                  Emoji
-                </span>
-              </button>
-
-              <AnimatePresence>
-                {showEmojiPicker && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10, scale: 0.9 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -10, scale: 0.9 }}
-                    className="absolute top-full mt-3 right-0 w-72 h-80 rounded-3xl glass-card z-50 flex flex-col overflow-hidden"
-                    onClick={(e) => e.stopPropagation()}
+            <div className="flex items-center justify-between md:justify-start gap-1 w-full md:w-auto md:ml-auto mt-2 md:mt-0 pt-2 md:pt-0 border-t border-white/5 md:border-0">
+              
+              {/* Standard Tools Group */}
+              <div className="flex items-center gap-1 md:gap-1.5 bg-white/5 border border-white/5 rounded-[14px] p-1 md:p-1.5 flex-[1.2] md:flex-none justify-center relative">
+                <div className="relative flex-1 md:flex-none">
+                  <button
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                    className="group flex w-full md:w-auto flex-col items-center gap-0.5 md:gap-1 md:min-w-[3.5rem] py-1.5 md:py-1 rounded-lg md:rounded-xl transition-all text-yellow-500 hover:bg-yellow-500/10"
+                    title="Emoji"
                   >
-                    <div className="p-3 border-b border-white/5 flex items-center gap-3 bg-white/5">
-                      <Search className="w-4 h-4 text-slate-500" />
-                      <input
-                        type="text"
-                        placeholder="Search symbols..."
-                        className="w-full text-sm focus:outline-none bg-transparent premium-input"
-                        value={emojiSearch}
-                        onChange={(e) => setEmojiSearch(e.target.value)}
-                      />
+                    <div className="transition-transform group-hover:scale-110 duration-200 flex items-center justify-center">
+                      <Smile className="w-4 h-4 md:w-5 md:h-5" />
                     </div>
-                    <div className="flex-1 overflow-y-auto p-3 grid grid-cols-6 gap-1">
-                      {filteredEmojis.map(emoji => (
-                        <button
-                          key={emoji}
-                          onMouseDown={(e) => e.preventDefault()}
-                          onClick={() => onEmojiInsert(emoji)}
-                          className="text-xl p-2 hover:bg-indigo-500/20 rounded-lg transition-colors"
-                        >
-                          {emoji}
-                        </button>
-                      ))}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+                    <span className="text-[7px] md:text-[8px] uppercase font-black tracking-widest text-yellow-500/60 group-hover:text-yellow-500">
+                      Emoji
+                    </span>
+                  </button>
 
-            <div className="w-px h-8 bg-white/10 mx-2" />
-
-            <div className="flex items-center gap-1.5 ml-auto">
-              <button
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => handleAiAction('enhance')}
-                disabled={isAiLoading}
-                className="group flex flex-col items-center gap-1 min-w-[3.5rem] py-1 rounded-xl transition-all text-purple-400 hover:bg-purple-500/10 disabled:opacity-50"
-                title="Enhance with AI"
-              >
-                <div className="transition-transform group-hover:scale-110 duration-200">
-                  {isAiLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Wand2 className="w-5 h-5" />}
+                  <AnimatePresence>
+                    {showEmojiPicker && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -10, scale: 0.9 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -10, scale: 0.9 }}
+                        className="absolute bottom-full mb-3 right-0 md:left-1/2 md:-translate-x-1/2 md:right-auto w-72 h-80 rounded-3xl glass-card z-50 flex flex-col overflow-hidden"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="p-3 border-b border-white/5 flex items-center gap-3 bg-white/5">
+                          <Search className="w-4 h-4 text-slate-500" />
+                          <input
+                            type="text"
+                            placeholder="Search symbols..."
+                            className="w-full text-sm focus:outline-none bg-transparent premium-input"
+                            value={emojiSearch}
+                            onChange={(e) => setEmojiSearch(e.target.value)}
+                          />
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-3 grid grid-cols-6 gap-1">
+                          {filteredEmojis.map(emoji => (
+                            <button
+                              key={emoji}
+                              onMouseDown={(e) => e.preventDefault()}
+                              onClick={() => onEmojiInsert(emoji)}
+                              className="text-xl p-2 hover:bg-indigo-500/20 rounded-lg transition-colors"
+                            >
+                              {emoji}
+                            </button>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
-                <span className="text-[8px] uppercase font-black tracking-widest text-purple-400/60 group-hover:text-purple-400">
-                  Enhance
-                </span>
-              </button>
 
-              <button
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => handleAiAction('compact')}
-                disabled={isAiLoading}
-                className="group flex flex-col items-center gap-1 min-w-[3.5rem] py-1 rounded-xl transition-all text-cyan-400 hover:bg-cyan-500/10 disabled:opacity-50"
-                title="Compact with AI"
-              >
-                <div className="transition-transform group-hover:scale-110 duration-200">
-                  {isAiLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Minimize2 className="w-5 h-5" />}
-                </div>
-                <span className="text-[8px] uppercase font-black tracking-widest text-cyan-400/60 group-hover:text-cyan-400">
-                  Compact
-                </span>
-              </button>
+                <button
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => applyStyleToSelection(unicode.normalizeText)}
+                  className="group flex flex-col items-center gap-0.5 md:gap-1 flex-1 md:flex-none md:min-w-[3.5rem] py-1.5 md:py-1 rounded-lg md:rounded-xl transition-all text-orange-400 hover:bg-orange-400/10"
+                  title="Normalize"
+                >
+                  <div className="transition-transform group-hover:scale-110 duration-200">
+                    <Eraser className="w-4 h-4 md:w-5 md:h-5" />
+                  </div>
+                  <span className="text-[7px] md:text-[8px] uppercase font-black tracking-widest text-orange-400/60 group-hover:text-orange-400">
+                    Clear
+                  </span>
+                </button>
+              </div>
 
-              <button
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => handleAiAction('highlight')}
-                disabled={isAiLoading}
-                className="group flex flex-col items-center gap-1 min-w-[3.5rem] py-1 rounded-xl transition-all text-amber-400 hover:bg-amber-500/10 disabled:opacity-50"
-                title="Highlight with AI"
-              >
-                <div className="transition-transform group-hover:scale-110 duration-200">
-                  {isAiLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Highlighter className="w-5 h-5" />}
+              <div className="hidden md:block shrink-0 w-px h-6 bg-white/10 mx-1" />
+
+              {/* AI Tools Group */}
+              <div className="flex items-center gap-1 md:gap-1.5 bg-indigo-500/5 border border-indigo-500/10 rounded-[14px] p-1 md:p-1.5 flex-[1.8] md:flex-none justify-center relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/10 via-transparent to-transparent opacity-50" />
+                
+                {/* AI Label */}
+                <div className="flex flex-col items-center justify-center px-1 md:px-2 relative z-10">
+                  <Sparkles className="w-3 h-3 md:w-4 md:h-4 text-indigo-400" />
+                  <span className="text-[6px] md:text-[7px] font-black tracking-[0.2em] text-indigo-400 uppercase mt-0.5">AI</span>
                 </div>
-                <span className="text-[8px] uppercase font-black tracking-widest text-amber-400/60 group-hover:text-amber-400">
-                  Highlight
-                </span>
-              </button>
+                
+                <div className="shrink-0 w-px h-6 bg-indigo-500/20 mx-0 md:mx-1 relative z-10" />
+
+                <button
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => handleAiAction('enhance')}
+                  disabled={isAiLoading}
+                  className="group flex flex-col items-center gap-0.5 md:gap-1 flex-1 md:flex-none md:min-w-[3.5rem] py-1 md:py-1 rounded-lg md:rounded-xl transition-all text-purple-400 hover:bg-purple-500/20 disabled:opacity-50 relative z-10"
+                  title="Enhance with AI"
+                >
+                  <div className="transition-transform group-hover:scale-110 duration-200">
+                    {isAiLoading ? <Loader2 className="w-4 h-4 md:w-5 md:h-5 animate-spin" /> : <Wand2 className="w-4 h-4 md:w-5 md:h-5" />}
+                  </div>
+                  <span className="text-[7px] md:text-[8px] uppercase font-black tracking-widest text-purple-400/60 group-hover:text-purple-400">
+                    Enhance
+                  </span>
+                </button>
+
+                <button
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => handleAiAction('compact')}
+                  disabled={isAiLoading}
+                  className="group flex flex-col items-center gap-0.5 md:gap-1 flex-1 md:flex-none md:min-w-[3.5rem] py-1 md:py-1 rounded-lg md:rounded-xl transition-all text-cyan-400 hover:bg-cyan-500/20 disabled:opacity-50 relative z-10"
+                  title="Compact with AI"
+                >
+                  <div className="transition-transform group-hover:scale-110 duration-200">
+                    {isAiLoading ? <Loader2 className="w-4 h-4 md:w-5 md:h-5 animate-spin" /> : <Minimize2 className="w-4 h-4 md:w-5 md:h-5" />}
+                  </div>
+                  <span className="text-[7px] md:text-[8px] uppercase font-black tracking-widest text-cyan-400/60 group-hover:text-cyan-400">
+                    Compact
+                  </span>
+                </button>
+
+                <button
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => handleAiAction('highlight')}
+                  disabled={isAiLoading}
+                  className="group flex flex-col items-center gap-0.5 md:gap-1 flex-1 md:flex-none md:min-w-[3.5rem] py-1 md:py-1 rounded-lg md:rounded-xl transition-all text-amber-400 hover:bg-amber-500/20 disabled:opacity-50 relative z-10"
+                  title="Highlight with AI"
+                >
+                  <div className="transition-transform group-hover:scale-110 duration-200">
+                    {isAiLoading ? <Loader2 className="w-4 h-4 md:w-5 md:h-5 animate-spin" /> : <Highlighter className="w-4 h-4 md:w-5 md:h-5" />}
+                  </div>
+                  <span className="text-[7px] md:text-[8px] uppercase font-black tracking-widest text-amber-400/60 group-hover:text-amber-400">
+                    Highlight
+                  </span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </div>
     </motion.div>
   );
-}
+});
